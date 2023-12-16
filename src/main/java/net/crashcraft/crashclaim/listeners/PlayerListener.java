@@ -688,6 +688,7 @@ public class PlayerListener implements Listener {
     private boolean isGrappleHook(ItemStack itemStack) {
         if (itemStack == null) return false;
         if (!itemStack.hasItemMeta()) return false;
+        if (!itemStack.getItemMeta().hasCustomModelData()) return false;
         return itemStack.getType().equals(Material.FISHING_ROD) && itemStack.getItemMeta().getCustomModelData() == 1;
     }
 }
