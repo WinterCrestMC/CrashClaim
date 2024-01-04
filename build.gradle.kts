@@ -37,14 +37,14 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
 
     // Adventure
-    val adventure = "4.13.0"
+    val adventure = "4.15.0"
     implementation("net.kyori:adventure-api:${adventure}")
-    implementation("net.kyori:adventure-platform-bukkit:4.3.0")
+    implementation("net.kyori:adventure-platform-bukkit:4.3.2")
     implementation("net.kyori:adventure-text-minimessage:${adventure}")
 
     // Other
     implementation("co.aikar:taskchain-bukkit:3.7.2")
-    implementation("net.wesjd:anvilgui:1.6.6-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.9.2-SNAPSHOT")
     implementation("co.aikar:fastutil-base:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longbase:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longhashmap:3.0-SNAPSHOT")
@@ -55,7 +55,7 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.0.1")
     compileOnly("com.google.guava:guava:31.1-jre")
     //compileOnly( "com.comphenix.protocol:ProtocolLib:4.7.1-SNAPSHOT")
-    compileOnly("com.github.dmulloy2:ProtocolLib:5.0.0")
+    compileOnly("com.github.dmulloy2:ProtocolLib:5.1.0")
     compileOnly( "net.milkbowl.vault:VaultAPI:1.7")
     compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.5")
     compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")
