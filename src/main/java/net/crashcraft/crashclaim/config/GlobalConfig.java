@@ -1,12 +1,17 @@
 package net.crashcraft.crashclaim.config;
 
 import net.crashcraft.crashclaim.visualize.api.VisualColor;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.model.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.*;
 
@@ -25,13 +30,13 @@ public class GlobalConfig extends BaseConfig{
 
     public static HashMap<String, GroupSettings> groupSettings;
 
-    private static void loadGroups(){
+    private static void loadGroups() {
         groupSettings = new HashMap<>();
 
         final String baseKey = "group-settings";
         ConfigurationSection section = config.getConfigurationSection(baseKey);
         Set<String> keys;
-        if (section == null){
+        if (section == null) {
             keys = new HashSet<>();
         } else {
             keys = section.getKeys(false);
@@ -39,7 +44,7 @@ public class GlobalConfig extends BaseConfig{
 
         keys.add("default"); // Always need a default group.
 
-        for (String groupName : keys){
+        for (String groupName : keys) {
             groupSettings.put(groupName, new GroupSettings(
                     getInt(baseKey + "." + groupName + ".max-claims", -1)
             ));
@@ -124,14 +129,55 @@ public class GlobalConfig extends BaseConfig{
         }
     }
 
-    public static double money_per_block;
+    // public static double money_per_block;
+    private static SortedMap<String, Double> money_per_block_group;
     public static ArrayList<UUID> disabled_worlds;
     public static String forcedVersionString;
     public static boolean blockPvPInsideClaims;
     public static boolean checkEntryExitWhileFlying;
 
+    public static double numberOfDaysTillExpiration;
+    public static String expiredMessage;
+
+    public static int maxClaimBlocks;
+
+    public static double getCostOfBlock(UUID player) {
+        return getCostOfBlock(Objects.requireNonNull(Bukkit.getPlayer(player)));
+    }
+
+    public static double getCostOfBlock(Player player) {
+        if (player.hasPermission("crashclaim.free")) {
+            return 0;
+        }
+
+        LuckPerms luckPermsProvider = LuckPermsProvider.get();
+
+        // Find which group matches sorted map key (group name)
+        ArrayList<String> keySet = new ArrayList<>(money_per_block_group.keySet());
+        Collections.reverse(keySet);
+        User user = luckPermsProvider.getUserManager().getUser(player.getUniqueId());
+        if (user == null) {
+            return money_per_block_group.get("default");
+        }
+        Collection<Group> groups = user.getInheritedGroups(user.getQueryOptions());
+        // Return the group with the highest weight that's in keySet
+        return money_per_block_group.getOrDefault(groups.stream().filter(group -> keySet.contains(group.getName())).reduce(
+                (acc, val) -> acc.getWeight().getAsInt() > val.getWeight().getAsInt() ? acc : val
+        ).get().getName(), money_per_block_group.get("default"));
+    }
+
     private static void miscValues(){
-        money_per_block = getDouble("money-per-block", 0.01);
+        // money_per_block = getDouble("money-per-block", 0.01);
+        money_per_block_group = new TreeMap<>();
+        ConfigurationSection section = config.getConfigurationSection("group-cost");
+        if (section != null){
+            for (String key : section.getKeys(false)){
+                money_per_block_group.put(key, section.getDouble(key + ".money-per-block"));
+            }
+        }
+        else {
+            money_per_block_group.put("default", 0.5);
+        }
         disabled_worlds = new ArrayList<>();
         for (String s : getStringList("disabled-worlds", Collections.emptyList())){
             World world = Bukkit.getWorld(s);
@@ -146,6 +192,10 @@ public class GlobalConfig extends BaseConfig{
         forcedVersionString = config.getString("use-this-version-instead");
         blockPvPInsideClaims = getBoolean("block-pvp-inside-claims", false);
         checkEntryExitWhileFlying = config.getBoolean("check-entry-and-exit-while-flying", false);
+
+        numberOfDaysTillExpiration = getDouble("expired-claims.number-of-days", 30);
+        expiredMessage = getString("expired-claims.message", "Your claim has expired due to inactivity at <COORDS> [Click to Teleport]");
+        maxClaimBlocks = getInt("max-claim-blocks", -1);
     }
 
     public static boolean bypassModeBypassesMoney;
