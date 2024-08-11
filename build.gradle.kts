@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("maven-publish")
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.gradleup.shadow") version "8.3.0"
 }
 
 repositories {
@@ -20,6 +20,7 @@ repositories {
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.mikeprimm.com/")
     maven("https://repo.maven.apache.org/maven2/")
+    maven("https://repo.dmulloy2.net/repository/public/")
 
     maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
@@ -34,7 +35,7 @@ dependencies {
     compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
-    compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
 
     // Adventure
     val adventure = "4.15.0"
@@ -44,7 +45,7 @@ dependencies {
 
     // Other
     implementation("co.aikar:taskchain-bukkit:3.7.2")
-    implementation("net.wesjd:anvilgui:1.9.2-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.10.1-SNAPSHOT")
     implementation("co.aikar:fastutil-base:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longbase:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longhashmap:3.0-SNAPSHOT")
@@ -55,7 +56,7 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.0.1")
     compileOnly("com.google.guava:guava:31.1-jre")
     //compileOnly( "com.comphenix.protocol:ProtocolLib:4.7.1-SNAPSHOT")
-    compileOnly("com.github.dmulloy2:ProtocolLib:5.1.0")
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT")
     compileOnly( "net.milkbowl.vault:VaultAPI:1.7")
     compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.5")
     compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")

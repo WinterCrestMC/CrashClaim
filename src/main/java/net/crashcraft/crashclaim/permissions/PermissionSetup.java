@@ -33,6 +33,7 @@ public class PermissionSetup {
         heldItemInteraction = new ArrayList<>();
 
         for (Material material : Material.values()){
+            if (!material.isItem()) continue;
             ItemStack stack = new ItemStack(material);
 
             if (stack.getItemMeta() instanceof BlockStateMeta) {
