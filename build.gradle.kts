@@ -21,6 +21,8 @@ repositories {
     maven("https://repo.mikeprimm.com/")
     maven("https://repo.maven.apache.org/maven2/")
     maven("https://repo.dmulloy2.net/repository/public/")
+    maven("https://repo.opencollab.dev/main/")
+    maven("https://repo.codemc.io/repository/maven-releases/")
 
     maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
@@ -35,17 +37,17 @@ dependencies {
     compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
-    compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
 
     // Adventure
-    val adventure = "4.15.0"
+    val adventure = "4.19.0"
     implementation("net.kyori:adventure-api:${adventure}")
     implementation("net.kyori:adventure-platform-bukkit:4.3.2")
     implementation("net.kyori:adventure-text-minimessage:${adventure}")
 
     // Other
     implementation("co.aikar:taskchain-bukkit:3.7.2")
-    implementation("net.wesjd:anvilgui:1.10.1-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.10.4-SNAPSHOT")
     implementation("co.aikar:fastutil-base:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longbase:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longhashmap:3.0-SNAPSHOT")
@@ -54,12 +56,18 @@ dependencies {
     implementation("co.aikar:idb-core:1.0.0-SNAPSHOT")
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.bstats:bstats-bukkit:3.0.1")
+
+    implementation("com.github.retrooper:packetevents-spigot:2.7.0")
+
     compileOnly("com.google.guava:guava:31.1-jre")
     //compileOnly( "com.comphenix.protocol:ProtocolLib:4.7.1-SNAPSHOT")
-    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT")
+    // compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT")
     compileOnly( "net.milkbowl.vault:VaultAPI:1.7")
     compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.5")
     compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")
+    compileOnly("com.ghostchu:quickshop-bukkit:6.1.0.0-SNAPSHOT")
+    compileOnly("com.ghostchu:quickshop-common:6.1.0.0-SNAPSHOT")
+    compileOnly("com.ghostchu:quickshop-api:6.1.0.0-SNAPSHOT")
     compileOnly( "me.clip:placeholderapi:2.10.10")
     compileOnly( "us.dynmap:dynmap-api:3.2-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
@@ -84,6 +92,8 @@ tasks {
         relocate("it.unimi.dsi", "net.crashcraft.crashclaim.fastutil")
         relocate("org.cache2k.IntCache", "net.crashcraft.crashclaim.cache2k")
         relocate("com.zaxxer.hikari", "net.crashcraft.crashclaim.hikari")
+        relocate("com.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.api")
+        relocate("io.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.plugin")
     }
 
     register<Copy>("buildToServer") {
@@ -109,7 +119,7 @@ tasks {
 group = "net.crashcraft"
 version = findProperty("version")!!
 description = "CrashClaim"
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 publishing {
     publications {

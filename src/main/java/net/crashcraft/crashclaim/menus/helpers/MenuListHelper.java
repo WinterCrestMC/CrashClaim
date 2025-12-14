@@ -364,6 +364,7 @@ public abstract class MenuListHelper extends GUI {
             case VIEW_SUB_CLAIMS -> Localization.MENU__PERMISSIONS__VIEW_SUB_CLAIMS.getItem(player);
             case MODIFY_PERMISSIONS -> Localization.MENU__PERMISSIONS__MODIFY_PERMISSIONS.getItem(player);
             case SUBCLAIM_ADMIN -> Localization.MENU__PERMISSIONS__SUBCLAIM_ADMIN.getItem(player);
+            case PVP -> Localization.MENU__PERMISSIONS__PVP.getItem(player);
         };
     }
 

@@ -13,6 +13,7 @@ import net.crashcraft.crashclaim.visualize.api.VisualGroup;
 import net.crashcraft.crashclaim.visualize.api.VisualProvider;
 import net.crashcraft.crashclaim.visualize.api.providers.BlockVisualProvider;
 import net.crashcraft.crashclaim.visualize.api.providers.GlowVisualProvider;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -81,8 +82,8 @@ public class VisualizationManager {
         }
     }
 
-    public void sendAlert(Player player, BaseComponent[] message){
-        if (message == null || message.length < 1){
+    public void sendAlert(Player player, Component message){
+        if (message == null || message.equals(Component.empty())){
             return;
         }
 

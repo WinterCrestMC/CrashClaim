@@ -86,6 +86,28 @@ public enum  PermissionRoute {
             set.setEntities(value);
         }
     },
+    PVP{
+        @Override
+        public int getPerm(PlayerPermissionSet set) {
+            if (set == null)
+                return -1;
+            return set.getPvp();
+        }
+        @Override
+        public void setPerm(PlayerPermissionSet set, int value) {
+            set.setPvp(value);
+        }
+        @Override
+        public int getPerm(GlobalPermissionSet set) {
+            if (set == null)
+                return -1;
+            return set.getPvp();
+        }
+        @Override
+        public void setPerm(GlobalPermissionSet set, int value) {
+            set.setPvp(value);
+        }
+    },
     EXPLOSIONS{
         @Override
         public int getPerm(PlayerPermissionSet set) {

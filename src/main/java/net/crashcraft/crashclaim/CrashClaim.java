@@ -3,10 +3,10 @@ package net.crashcraft.crashclaim;
 import co.aikar.taskchain.BukkitTaskChainFactory;
 import co.aikar.taskchain.TaskChain;
 import co.aikar.taskchain.TaskChainFactory;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
+import com.github.retrooper.packetevents.PacketEvents;
 import dev.whip.crashutils.CrashUtils;
 import dev.whip.crashutils.menusystem.GUI;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import io.papermc.lib.PaperLib;
 import net.crashcraft.crashclaim.api.CrashClaimAPI;
 import net.crashcraft.crashclaim.commands.CommandManager;
@@ -18,6 +18,7 @@ import net.crashcraft.crashclaim.data.ClaimDataManager;
 import net.crashcraft.crashclaim.data.MaterialName;
 import net.crashcraft.crashclaim.listeners.PaperListener;
 import net.crashcraft.crashclaim.listeners.PlayerListener;
+import net.crashcraft.crashclaim.listeners.QuickShopListener;
 import net.crashcraft.crashclaim.listeners.WorldListener;
 import net.crashcraft.crashclaim.localization.LocalizationLoader;
 import net.crashcraft.crashclaim.migration.MigrationManager;
@@ -50,7 +51,6 @@ public class CrashClaim extends JavaPlugin {
 
     private ClaimDataManager manager;
     private VisualizationManager visualizationManager;
-    private ProtocolManager protocolManager;
     private CrashUtils crashUtils;
     private MaterialName materialName;
     private PaymentProcessor payment;
@@ -64,7 +64,10 @@ public class CrashClaim extends JavaPlugin {
     public void onLoad() {
         plugin = this;
 
-        this.protocolManager = ProtocolLibrary.getProtocolManager();
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        //On Bukkit, calling this here is essential, hence the name "load"
+        PacketEvents.getAPI().load();
+
         this.paymentPlugin = (CrashPayment) Bukkit.getPluginManager().getPlugin("CrashPayment");
 
         if (paymentPlugin == null){
@@ -79,6 +82,8 @@ public class CrashClaim extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        PacketEvents.getAPI().init();
+
         Bukkit.getPluginManager().registerEvents(pluginSupport, this);
 
         taskChainFactory = BukkitTaskChainFactory.create(this);
@@ -86,7 +91,7 @@ public class CrashClaim extends JavaPlugin {
 
         loadConfigs();
 
-        wrapper = new CompatabilityManager(protocolManager).getWrapper(); // Find and fetch version wrapper
+        wrapper = new CompatabilityManager().getWrapper(); // Find and fetch version wrapper
 
         getLogger().info("Loading language file");
         LocalizationLoader.initialize(); // Init and reload localization
@@ -109,6 +114,7 @@ public class CrashClaim extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new WorldListener(manager, visualizationManager), this);
         Bukkit.getPluginManager().registerEvents(new PlayerListener(manager, visualizationManager), this);
+        Bukkit.getPluginManager().registerEvents(new QuickShopListener(), this);
 
         if (PaperLib.isPaper()){
             getLogger().info("Using extra protections provided by the paper api");
@@ -138,6 +144,7 @@ public class CrashClaim extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        PacketEvents.getAPI().terminate();
         Bukkit.getScheduler().cancelTasks(this); // Stop saving tasks
 
         if (dataLoaded) {
@@ -160,7 +167,6 @@ public class CrashClaim extends JavaPlugin {
         api = null;
         manager = null;
         visualizationManager = null;
-        protocolManager = null;
         crashUtils = null;
         materialName = null;
         payment = null;
@@ -249,9 +255,6 @@ public class CrashClaim extends JavaPlugin {
         return wrapper;
     }
 
-    public ProtocolManager getProtocolManager() {
-        return protocolManager;
-    }
 
     public PluginSupport getPluginSupport(){
         return pluginSupport.getSupportDistributor();

@@ -6,7 +6,7 @@ import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Subcommand;
-import com.comphenix.protocol.ProtocolLibrary;
+import com.github.retrooper.packetevents.PacketEvents;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.localization.Localization;
 import net.crashcraft.crashclaim.localization.LocalizationUtils;
@@ -16,8 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
-
-import java.util.concurrent.CompletableFuture;
 
 @CommandAlias("crashclaim")
 public class AdminCommand extends BaseCommand {
@@ -32,12 +30,12 @@ public class AdminCommand extends BaseCommand {
     @Subcommand("reload")
     @CommandPermission("crashclaim.admin.reload")
     public void reload(CommandSender sender){
-        sender.spigot().sendMessage(Localization.RELOAD__RELOADING.getMessage(null));
+        sender.sendMessage(Localization.RELOAD__RELOADING.getMessage(null));
 
         crashClaim.loadConfigs(); // Reload configs and their values.
         Localization.rebuildCachedMessages(); // Reload localization config, will load with new language value if changed in config.
 
-        sender.spigot().sendMessage(Localization.RELOAD__RELOADED.getMessage(null));
+        sender.sendMessage(Localization.RELOAD__RELOADED.getMessage(null));
     }
 
     @Subcommand("version")
@@ -46,7 +44,7 @@ public class AdminCommand extends BaseCommand {
         // This message should not be configurable by end user as it is used for debug
 
         sender.sendMessage(ChatColor.GREEN + crashClaim.getDescription().getName() + ": " + ChatColor.YELLOW + crashClaim.getDescription().getVersion()
-                + ChatColor.GREEN + "\nMinecraft Version: " + ChatColor.YELLOW + ProtocolLibrary.getProtocolManager().getMinecraftVersion().getVersion()
+                + ChatColor.GREEN + "\nMinecraft Version: " + ChatColor.YELLOW + PacketEvents.getAPI().getServerManager().getVersion().getReleaseName()
                 + ChatColor.GREEN + "\nServer Version: " + ChatColor.YELLOW + Bukkit.getVersion()
                 + ChatColor.GOLD + "\nHard Dependencies:");
 
@@ -74,28 +72,28 @@ public class AdminCommand extends BaseCommand {
         @CommandCompletion("@migrators")
         public void onMigrate(CommandSender sender, String adaptor){
             if (Bukkit.getServer().getOnlinePlayers().size() > 0){
-                sender.spigot().sendMessage(Localization.MIGRATE__WARNING_PLAYERS_ONLINE.getMessage(null));
+                sender.sendMessage(Localization.MIGRATE__WARNING_PLAYERS_ONLINE.getMessage(null));
             }
-            sender.spigot().sendMessage(Localization.MIGRATE__WARNING_BACKUP.getMessage(null));
+            sender.sendMessage(Localization.MIGRATE__WARNING_BACKUP.getMessage(null));
 
             selectedAdaptor = manager.getMigrationAdaptor(adaptor);
 
             if (selectedAdaptor == null){
-                sender.spigot().sendMessage(Localization.MIGRATE__NO_ADAPTER.getMessage(null));
+                sender.sendMessage(Localization.MIGRATE__NO_ADAPTER.getMessage(null));
                 return;
             }
 
-            sender.spigot().sendMessage(Localization.MIGRATE__SELECTED.getMessage(null,
+            sender.sendMessage(Localization.MIGRATE__SELECTED.getMessage(null,
                     "adapter", selectedAdaptor.getIdentifier()));
         }
 
         @Subcommand("list")
         public void onList(CommandSender sender){
-            sender.spigot().sendMessage(Localization.MIGRATE__LIST__TITLE.getMessage(null));
+            sender.sendMessage(Localization.MIGRATE__LIST__TITLE.getMessage(null));
             for (MigrationAdapter adapter : manager.getAdapters()){
                 String error = adapter.checkRequirements(manager);
 
-                sender.spigot().sendMessage(Localization.MIGRATE__LIST__MESSAGE.getMessage(
+                sender.sendMessage(Localization.MIGRATE__LIST__MESSAGE.getMessage(
                         null,
                         "identifier", adapter.getIdentifier(),
                         "status", error == null ? Localization.MIGRATE__LIST__AVAILABLE.getRawMessage() : Localization.MIGRATE__LIST__DISABLED.getRawMessage(),
@@ -135,7 +133,7 @@ public class AdminCommand extends BaseCommand {
 
         @Subcommand("cancel")
         public void onCancel(CommandSender sender){
-            sender.spigot().sendMessage(Localization.MIGRATE__CANCEL.getMessage(null));
+            sender.sendMessage(Localization.MIGRATE__CANCEL.getMessage(null));
             selectedAdaptor = null;
         }
     }

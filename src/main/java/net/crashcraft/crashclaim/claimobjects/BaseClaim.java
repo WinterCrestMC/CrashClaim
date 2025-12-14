@@ -1,10 +1,14 @@
 package net.crashcraft.crashclaim.claimobjects;
 
+import java.util.List;
+import java.util.Set;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.localization.Localization;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 
 import java.util.UUID;
+import org.bukkit.entity.Player;
 
 public abstract class BaseClaim {
     private final int id;
@@ -18,16 +22,18 @@ public abstract class BaseClaim {
 
     private final PermissionGroup perms;
 
+    private final List<UUID> bannedPlayers;
+
     private String name;
     private String entryMessage;
-    private BaseComponent[] parsedEntryMessage; // Cached for efficiency
+    private Component parsedEntryMessage; // Cached for efficiency
     private String exitMessage;
-    private BaseComponent[] parsedExitMessage; // Cached for efficiency
+    private Component parsedExitMessage; // Cached for efficiency
 
     private boolean isEditing = false;
     private boolean deleted = false;
 
-    public BaseClaim(int id, int maxCornerX, int maxCornerZ, int minCornerX, int minCornerZ, UUID world, PermissionGroup perms) {
+    public BaseClaim(int id, int maxCornerX, int maxCornerZ, int minCornerX, int minCornerZ, UUID world, PermissionGroup perms, List<UUID> bannedPlayers) {
         this.id = id;
         this.maxCornerX = maxCornerX;
         this.maxCornerZ = maxCornerZ;
@@ -35,6 +41,7 @@ public abstract class BaseClaim {
         this.minCornerZ = minCornerZ;
         this.world = world;
         this.perms = perms;
+        this.bannedPlayers = bannedPlayers;
     }
 
     public void setToSave(boolean toSave){
@@ -163,12 +170,40 @@ public abstract class BaseClaim {
         this.deleted = true;
     }
 
-    public BaseComponent[] getParsedEntryMessage() {
+    public Component getParsedEntryMessage() {
         return parsedEntryMessage;
     }
 
-    public BaseComponent[] getParsedExitMessage() {
+    public Component getParsedExitMessage() {
         return parsedExitMessage;
+    }
+
+    public boolean isBanned(UUID player){
+        return bannedPlayers.contains(player);
+    }
+
+    public void ban(UUID player){
+        bannedPlayers.add(player);
+    }
+
+    public void unban(UUID player){
+        bannedPlayers.remove(player);
+    }
+
+    public void ban(Player player){
+        ban(player.getUniqueId());
+    }
+
+    public void unban(Player player){
+        unban(player.getUniqueId());
+    }
+
+    public boolean isBanned(Player player){
+        return isBanned(player.getUniqueId());
+    }
+
+    public List<UUID> getBannedPlayers() {
+        return bannedPlayers;
     }
 }
 

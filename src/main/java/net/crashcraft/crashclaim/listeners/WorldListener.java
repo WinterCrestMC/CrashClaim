@@ -1,5 +1,12 @@
 package net.crashcraft.crashclaim.listeners;
 
+import com.ghostchu.quickshop.api.QuickShopAPI;
+import com.ghostchu.quickshop.api.shop.Shop;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.config.GlobalConfig;
 import net.crashcraft.crashclaim.data.ClaimDataManager;
@@ -12,7 +19,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Enderman;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Sheep;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wither;
+import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -21,19 +37,19 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.SheepRegrowWoolEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 
-import java.util.*;
-
 public class WorldListener implements Listener {
-     private final PermissionHelper helper;
-     private final PermissionSetup perms;
-     private final VisualizationManager visuals;
-     private final ClaimDataManager manager;
 
-     private final Set<Sheep> trackSheepRegrow; // Tracker to block sheep from regrowing after block cancelled
+    private final PermissionHelper helper;
+    private final PermissionSetup perms;
+    private final VisualizationManager visuals;
+    private final ClaimDataManager manager;
 
-    public WorldListener(ClaimDataManager manager, VisualizationManager visuals){
+    private final Set<Sheep> trackSheepRegrow; // Tracker to block sheep from regrowing after block cancelled
+
+    public WorldListener(ClaimDataManager manager, VisualizationManager visuals) {
         this.manager = manager;
         this.perms = manager.getPermissionSetup();
         this.visuals = visuals;
@@ -43,20 +59,20 @@ public class WorldListener implements Listener {
     }
 
     @EventHandler
-    public void onSheepRegrowWoolEvent(SheepRegrowWoolEvent e){
-        if (trackSheepRegrow.remove(e.getEntity())){ // API workaround
+    public void onSheepRegrowWoolEvent(SheepRegrowWoolEvent e) {
+        if (trackSheepRegrow.remove(e.getEntity())) { // API workaround
             e.setCancelled(true);
         }
     }
 
-    @EventHandler (priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onStructureGrowEvent(StructureGrowEvent e){
-        if (GlobalConfig.disabled_worlds.contains(e.getWorld().getUID())){
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onStructureGrowEvent(StructureGrowEvent e) {
+        if (GlobalConfig.disabled_worlds.contains(e.getWorld().getUID())) {
             return;
         }
 
         ArrayList<BlockState> removeAlBlocks = new ArrayList<>();
-        if (e.getPlayer() != null){
+        if (e.getPlayer() != null) {
             UUID uuid = e.getPlayer().getUniqueId();
 
             if (!helper.hasPermission(uuid, e.getLocation(), PermissionRoute.BUILD)) { // Fixes Mushrooms and trees growing into claims.
@@ -65,13 +81,13 @@ public class WorldListener implements Listener {
                 return; // Unable to grow initial block so whole event needs to be canceled.
             }
 
-            for (BlockState state : e.getBlocks()){
-                if (!helper.hasPermission(uuid, state.getLocation(), PermissionRoute.BUILD)){ // Fixes Mushrooms and trees growing into claims.
+            for (BlockState state : e.getBlocks()) {
+                if (!helper.hasPermission(uuid, state.getLocation(), PermissionRoute.BUILD)) { // Fixes Mushrooms and trees growing into claims.
                     removeAlBlocks.add(state);
                 }
             }
 
-            if (removeAlBlocks.size() > 0){
+            if (removeAlBlocks.size() > 0) {
                 visuals.sendAlert(e.getPlayer(), Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(e.getPlayer()));
             }
         } else {
@@ -90,11 +106,12 @@ public class WorldListener implements Listener {
                     Location blockLocation = state.getLocation();
                     Claim blockClaim = manager.getClaim(blockLocation);
 
-                    if (blockClaim == null || blockClaim == baseClaim){
+                    if (blockClaim == null || blockClaim == baseClaim) {
                         continue; // Skip as this should only be hit under a natural grow event.
                     }
 
-                    if (!helper.hasPermission(state.getLocation(), PermissionRoute.BUILD)) { // Final check if claims do not match, check permission as we want to prevent growing into another claim
+                    if (!helper.hasPermission(state.getLocation(),
+                        PermissionRoute.BUILD)) { // Final check if claims do not match, check permission as we want to prevent growing into another claim
                         removeAlBlocks.add(state);
                     }
                 }
@@ -103,19 +120,30 @@ public class WorldListener implements Listener {
 
         e.getBlocks().removeAll(removeAlBlocks);
 
-        if (e.getBlocks().isEmpty()){
+        if (e.getBlocks().isEmpty()) {
             e.setCancelled(true);
         }
     }
 
-    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onProjectileHitEvent(EntityInteractEvent e){
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())){
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onProjectileHitEvent(EntityInteractEvent e) {
+        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
             return;
         }
 
-        if (e.getEntity() instanceof Projectile && ((Projectile) e.getEntity()).getShooter() instanceof Player player){
+        if (QuickShopListener.isExempt(e)) {
+            return;
+        }
+
+        if (e.getEntity() instanceof Projectile && ((Projectile) e.getEntity()).getShooter() instanceof Player player) {
             Location location = e.getBlock().getLocation();
+
+            // Bypass quickshop signs
+            Shop shop = QuickShopAPI.getInstance().getShopManager().getShopIncludeAttached(location);
+
+            if (shop != null) {
+                return;
+            }
 
             if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.INTERACTIONS)) {
                 Material material = e.getBlock().getType();
@@ -124,19 +152,20 @@ public class WorldListener implements Listener {
                     visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__INTERACTION.getMessage(player));
                 }
             }
-        } if (e.getEntity() instanceof Villager){
+        }
+        if (e.getEntity() instanceof Villager) {
             // TODO remove once other check is done
         } else {
             // Entities other than projectiles where shooter is a player are handled by entity grief
-            if (!helper.hasPermission(e.getBlock().getLocation(), PermissionRoute.ENTITY_GRIEF)){
+            if (!helper.hasPermission(e.getBlock().getLocation(), PermissionRoute.ENTITY_GRIEF)) {
                 e.setCancelled(true);
             }
         }
     }
 
-    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityChangeBlockEvent(EntityChangeBlockEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())){
+        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
             return;
         }
 
@@ -151,28 +180,30 @@ public class WorldListener implements Listener {
         } else {
             if (e.getEntity() instanceof Arrow && ((Arrow) e.getEntity()).getShooter() instanceof Player player) {
                 if (e.getBlock().getType().equals(Material.TNT)
-                        && !helper.hasPermission(player.getUniqueId(), location, PermissionRoute.INTERACTIONS)){
+                    && !helper.hasPermission(player.getUniqueId(), location, PermissionRoute.INTERACTIONS)) {
                     e.setCancelled(true);
                     visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__INTERACTION.getMessage(player));
                 }
-            } else if (e.getEntity() instanceof Sheep sheep && !GlobalConfig.skipNaturalMobGrief && !helper.hasPermission(location, PermissionRoute.ENTITY_GRIEF)) {
+            } else if (e.getEntity() instanceof Sheep sheep && !GlobalConfig.skipNaturalMobGrief && !helper.hasPermission(location,
+                PermissionRoute.ENTITY_GRIEF)) {
                 e.setCancelled(true);
 
                 if (e.getBlock().getBlockData().getMaterial() == Material.GRASS_BLOCK && e.getTo() == Material.DIRT) { // Stupid api workaround for sheep eat
                     trackSheepRegrow.add(sheep);
                 }
             } else if (
-                    (e.getEntity() instanceof Enderman
-                            || (e.getEntity() instanceof WitherSkull) // Wither skulls should be the one exploding but some versions the api is wrong, TODO check if explosions are handled correctly
-                            || (e.getEntity() instanceof Wither)) // Handles wither block breaks other than explosions
-                     && !helper.hasPermission(location, PermissionRoute.ENTITY_GRIEF)
+                (e.getEntity() instanceof Enderman
+                    || (e.getEntity() instanceof WitherSkull)
+                    // Wither skulls should be the one exploding but some versions the api is wrong, TODO check if explosions are handled correctly
+                    || (e.getEntity() instanceof Wither)) // Handles wither block breaks other than explosions
+                    && !helper.hasPermission(location, PermissionRoute.ENTITY_GRIEF)
             ) {
                 e.setCancelled(true);
-            } else if (e.getEntity() instanceof Villager || e.getEntity() instanceof FallingBlock){
+            } else if (e.getEntity() instanceof Villager || e.getEntity() instanceof FallingBlock) {
                 // Don't handle this for now, maybe need to handle
             } else {
                 for (Entity entity : e.getEntity().getPassengers()) { // Used for boats and horses with player as passenger
-                    if (entity instanceof Player player){
+                    if (entity instanceof Player player) {
                         if (helper.hasPermission(entity.getUniqueId(), location, PermissionRoute.INTERACTIONS)) {
                             return;
                         }
@@ -191,28 +222,66 @@ public class WorldListener implements Listener {
         }
     }
 
-    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onBlockExplodeEvent(BlockExplodeEvent e){
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())){
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onBlockExplodeEvent(BlockExplodeEvent e) {
+        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
             return;
         }
 
         e.blockList().removeAll(processExplosion(e.blockList()));
     }
 
-    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onBlockExplodeEvent(EntityExplodeEvent e){
-        if (GlobalConfig.disabled_worlds.contains(e.getLocation().getWorld().getUID())){
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onBlockExplodeEvent(EntityExplodeEvent e) {
+        if (GlobalConfig.disabled_worlds.contains(e.getLocation().getWorld().getUID())) {
             return;
         }
 
         e.blockList().removeAll(processExplosion(e.blockList()));
     }
 
-    private List<Block> processExplosion(List<Block> blocks ){
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onBlockInteract(PlayerInteractEvent e) {
+        Block block = e.getClickedBlock();
+
+        if (block == null) {
+            return;
+        }
+
+        if (GlobalConfig.disabled_worlds.contains(block.getWorld().getUID())) {
+            return;
+        }
+
+        if (QuickShopListener.isExempt(e)) {
+            return;
+        }
+
+        Player player = e.getPlayer();
+
+        Location location = block.getLocation();
+
+        // Bypass quickshop signs
+        Shop shop = QuickShopAPI.getInstance().getShopManager().getShopIncludeAttached(location);
+
+        if (shop != null) {
+            return;
+        }
+
+        if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.INTERACTIONS)) {
+            Material material = block.getType();
+            if (material.isInteractable() || perms.getExtraInteractables().contains(material)) {
+                e.setCancelled(true);
+                visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__INTERACTION.getMessage(player));
+            }
+        }
+
+
+    }
+
+    private List<Block> processExplosion(List<Block> blocks) {
         ArrayList<Block> removeAlBlocks = new ArrayList<>();
-        for (Block block : blocks){
-            if (!helper.hasPermission(block.getLocation(), PermissionRoute.EXPLOSIONS)){
+        for (Block block : blocks) {
+            if (!helper.hasPermission(block.getLocation(), PermissionRoute.EXPLOSIONS)) {
                 removeAlBlocks.add(block);
             }
         }

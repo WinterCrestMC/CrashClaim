@@ -18,6 +18,9 @@ import net.crashcraft.crashclaim.visualize.api.VisualColor;
 import net.crashcraft.crashclaim.visualize.api.VisualGroup;
 import net.crashcraft.crashclaim.visualize.api.VisualType;
 import net.crashcraft.crashpayment.payment.TransactionType;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -39,7 +42,7 @@ public class NewClaimMode implements ClaimMode {
         this.visualizationManager = commandManager.getVisualizationManager();
         this.manager = commandManager.getDataManager();
 
-        player.spigot().sendMessage(Localization.NEW_CLAIM__CLICK_CORNER.getMessage(player));
+        player.sendMessage(Localization.NEW_CLAIM__CLICK_CORNER.getMessage(player));
 
         VisualGroup group = visualizationManager.fetchVisualGroup(player, true);
         group.removeAllVisualsOfType(VisualType.MARKER);
@@ -49,17 +52,17 @@ public class NewClaimMode implements ClaimMode {
 
     private boolean checkCanCreate(Location min, Location max){
         if ((max.getBlockX() - min.getBlockX()) < 4 || (max.getBlockZ() - min.getBlockZ()) < 4) {
-            player.spigot().sendMessage(Localization.NEW_CLAIM__MIN_SIZE.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__MIN_SIZE.getMessage(player));
             return false;
         }
 
         if (manager.checkOverLapSurroudningClaims(-1, max.getBlockX(), max.getBlockZ(), min.getBlockX(), min.getBlockZ(), min.getWorld().getUID())){
-            player.spigot().sendMessage(Localization.NEW_CLAIM__OVERLAPPING.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__OVERLAPPING.getMessage(player));
             return false;
         }
 
         if (!CrashClaim.getPlugin().getPluginSupport().canClaim(min, max)){
-            player.spigot().sendMessage(Localization.NEW_CLAIM__OTHER_ERROR.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__OTHER_ERROR.getMessage(player));
             return false;
         }
         // Fetch a users claims
@@ -67,7 +70,7 @@ public class NewClaimMode implements ClaimMode {
         blocks += (max.getBlockX() - min.getBlockX()) * (max.getBlockZ() - min.getBlockZ());
         // Check max blocks
         if (GlobalConfig.maxClaimBlocks > -1  && (blocks > GlobalConfig.maxClaimBlocks)){
-            player.spigot().sendMessage(Localization.CLAIM__TOO_BIG.getMessage(player,
+            player.sendMessage(Localization.CLAIM__TOO_BIG.getMessage(player,
                     "blocks", Integer.toString(GlobalConfig.maxClaimBlocks)));
             return false;
         }
@@ -93,7 +96,7 @@ public class NewClaimMode implements ClaimMode {
 
         if (price > 0){
             new ConfirmationMenu(player,
-                    Localization.NEW_CLAIM__CREATE_MENU__TITLE.getMessage(player),
+                    asBungee(Localization.NEW_CLAIM__CREATE_MENU__TITLE.getMessage(player)),
                     Localization.NEW_CLAIM__CREATE_MENU__MESSAGE.getItem(player,
                             "price", priceString),
                     Localization.NEW_CLAIM__CREATE_MENU__ACCEPT.getItem(player,
@@ -109,7 +112,7 @@ public class NewClaimMode implements ClaimMode {
 
                             CrashClaim.getPlugin().getPayment().makeTransaction(player.getUniqueId(), TransactionType.WITHDRAW, "Claim Purchase", price, (res) -> {
                                 if (!res.transactionSuccess()){
-                                    player.spigot().sendMessage(Localization.NEW_CLAIM__NOT_ENOUGH_BALANCE.getMessage(player,
+                                    player.sendMessage(Localization.NEW_CLAIM__NOT_ENOUGH_BALANCE.getMessage(player,
                                             "price", priceString));
                                     cleanup(player.getUniqueId(), true);
                                     return;
@@ -129,13 +132,17 @@ public class NewClaimMode implements ClaimMode {
         }
     }
 
+    private BaseComponent[] asBungee(Component component){
+        return BungeeComponentSerializer.get().serialize(component);
+    }
+
     private void afterTransaction(Location min, Location max, int area, UUID target){
         ClaimResponse response = manager.createClaim(max, min, player.getUniqueId());
 
         if (response.isStatus()) {
             ((Claim) response.getClaim()).addContribution(player.getUniqueId(), area); //Contribution tracking
 
-            player.spigot().sendMessage(Localization.NEW_CLAIM__SUCCESS.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__SUCCESS.getMessage(player));
 
             VisualGroup group = visualizationManager.fetchVisualGroup(player, true);
             group.removeAllVisuals();
@@ -147,7 +154,7 @@ public class NewClaimMode implements ClaimMode {
 
             cleanup(player.getUniqueId(), false);
         } else {
-            player.spigot().sendMessage(Localization.NEW_CLAIM__ERROR.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__ERROR.getMessage(player));
             cleanup(player.getUniqueId(), true);
         }
     }

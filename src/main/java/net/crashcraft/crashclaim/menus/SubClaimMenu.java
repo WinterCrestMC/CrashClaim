@@ -12,6 +12,9 @@ import net.crashcraft.crashclaim.menus.list.SubClaimListMenu;
 import net.crashcraft.crashclaim.menus.permissions.SimplePermissionMenu;
 import net.crashcraft.crashclaim.permissions.PermissionHelper;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
@@ -27,7 +30,7 @@ public class SubClaimMenu extends GUI {
     private final PermissionHelper helper;
 
     public SubClaimMenu(Player player, SubClaim claim) {
-        super(player, BaseComponent.toLegacyText(Localization.MENU__SUB_CLAIM__TITLE.getMessage(null)), 54);
+        super(player, LegacyComponentSerializer.legacySection().serialize(Localization.MENU__SUB_CLAIM__TITLE.getMessage(null)), 54);
         this.claim = claim;
         this.helper = PermissionHelper.getPermissionHelper();
         setupGUI();
@@ -101,7 +104,7 @@ public class SubClaimMenu extends GUI {
                 if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_PERMISSIONS)) {
                     new PlayerPermListMenu(claim, getPlayer(), this);
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -109,7 +112,7 @@ public class SubClaimMenu extends GUI {
                 if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_PERMISSIONS)) {
                     new SimplePermissionMenu(getPlayer(), claim, null, this).open();
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -120,12 +123,12 @@ public class SubClaimMenu extends GUI {
                             .itemLeft(Localization.MENU__CLAIM__RENAME__MESSAGE.getItem(player))
                             .onClick((integer, snapshot) -> {
                                 claim.setName(snapshot.getText(), true);
-                                snapshot.getPlayer().spigot().sendMessage(Localization.MENU__CLAIM__RENAME__CONFIRMATION.getMessage(snapshot.getPlayer(),
+                                snapshot.getPlayer().sendMessage(Localization.MENU__CLAIM__RENAME__CONFIRMATION.getMessage(snapshot.getPlayer(),
                                         "name", snapshot.getText()));
                                 return Collections.singletonList(AnvilGUI.ResponseAction.close());
                             }).open(getPlayer());
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -136,12 +139,12 @@ public class SubClaimMenu extends GUI {
                             .itemLeft(Localization.MENU__CLAIM__ENTRY_MESSAGE__MESSAGE.getItem(player))
                             .onClick((integer, snapshot) -> {
                                 claim.setEntryMessage(snapshot.getText(), true);
-                                snapshot.getPlayer().spigot().sendMessage(Localization.MENU__CLAIM__ENTRY_MESSAGE__CONFIRMATION.getMessage(snapshot.getPlayer(),
+                                snapshot.getPlayer().sendMessage(Localization.MENU__CLAIM__ENTRY_MESSAGE__CONFIRMATION.getMessage(snapshot.getPlayer(),
                                         "entry_message", snapshot.getText()));
                                 return Collections.singletonList(AnvilGUI.ResponseAction.close());
                             }).open(getPlayer());
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -152,12 +155,12 @@ public class SubClaimMenu extends GUI {
                             .itemLeft(Localization.MENU__CLAIM__EXIT_MESSAGE__MESSAGE.getItem(player))
                             .onClick((integer, snapshot) -> {
                                 claim.setExitMessage(snapshot.getText(), true);
-                                snapshot.getPlayer().spigot().sendMessage(Localization.MENU__CLAIM__EXIT_MESSAGE__CONFIRMATION.getMessage(snapshot.getPlayer(),
+                                snapshot.getPlayer().sendMessage(Localization.MENU__CLAIM__EXIT_MESSAGE__CONFIRMATION.getMessage(snapshot.getPlayer(),
                                         "exit_message", snapshot.getText()));
                                 return Collections.singletonList(AnvilGUI.ResponseAction.close());
                             }).open(getPlayer());
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -167,7 +170,7 @@ public class SubClaimMenu extends GUI {
                     message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
                     new ConfirmationMenu(player,
-                            Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
+                            asBungee(Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
                             message,
                             Localization.UN_SUBCLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                             Localization.UN_SUBCLAIM__MENU__CONFIRMATION__DENY.getItem(player),
@@ -176,13 +179,13 @@ public class SubClaimMenu extends GUI {
                                     if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
                                         CrashClaim.getPlugin().getDataManager().deleteSubClaim(claim);
                                     } else {
-                                        player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                                        player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                                     }
                                 }
                                 return "";
                             }, player -> "").open();
                 } else {
-                    player.spigot().sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
                 }
                 break;
@@ -191,5 +194,9 @@ public class SubClaimMenu extends GUI {
                 new SubClaimListMenu(getPlayer(), new ClaimMenu(getPlayer(), main, null), main).open();
                 break;
         }
+    }
+
+    private BaseComponent[] asBungee(Component component){
+        return BungeeComponentSerializer.get().serialize(component);
     }
 }

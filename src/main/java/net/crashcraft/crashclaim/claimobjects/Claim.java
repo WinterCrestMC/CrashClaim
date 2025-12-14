@@ -1,5 +1,7 @@
 package net.crashcraft.crashclaim.claimobjects;
 
+import java.util.List;
+import java.util.Set;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.data.MathUtils;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
@@ -21,8 +23,8 @@ public class Claim extends BaseClaim {
 
     private HashMap<UUID, Integer> contribution;
 
-    public Claim(int id, int upperCornerX, int upperCornerZ, int lowerCornerX, int lowerCornerZ, UUID world, PermissionGroup perms, UUID owner) {
-        super(id, upperCornerX, upperCornerZ, lowerCornerX, lowerCornerZ, world, perms);
+    public Claim(int id, int upperCornerX, int upperCornerZ, int lowerCornerX, int lowerCornerZ, UUID world, PermissionGroup perms, UUID owner, List<UUID> bannedPlayers) {
+        super(id, upperCornerX, upperCornerZ, lowerCornerX, lowerCornerZ, world, perms, bannedPlayers);
         this.toSave = false;
         this.subClaims = new ArrayList<>();
         this.owner = owner;

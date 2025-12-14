@@ -10,6 +10,7 @@ public abstract class PermissionSet implements Cloneable{
     private int entities;
     private int teleportation;
     private int viewSubClaims;
+    private int pvp;
 
     private HashMap<Material, Integer> containers;
     private int defaultContainerValue;
@@ -18,7 +19,7 @@ public abstract class PermissionSet implements Cloneable{
 
     }
 
-    public PermissionSet(int build, int interactions, int entities, int teleportation, int viewSubClaims, HashMap<Material, Integer> containers, int defaultContainerValue) {
+    public PermissionSet(int build, int interactions, int entities, int teleportation, int viewSubClaims, HashMap<Material, Integer> containers, int defaultContainerValue, int pvp) {
         this.build = build;
         this.interactions = interactions;
         this.entities = entities;
@@ -26,6 +27,7 @@ public abstract class PermissionSet implements Cloneable{
         this.viewSubClaims = viewSubClaims;
         this.containers = containers;
         this.defaultContainerValue = defaultContainerValue;
+        this.pvp = pvp;
     }
 
     public int getBuild() {
@@ -70,6 +72,14 @@ public abstract class PermissionSet implements Cloneable{
 
     public void setContainer(Material material, int value){
         this.containers.put(material, value);
+    }
+
+    public void setPvp(int pvp) {
+        this.pvp = pvp;
+    }
+
+    public int getPvp() {
+        return pvp;
     }
 
     public HashMap<Material, Integer> getContainers() {

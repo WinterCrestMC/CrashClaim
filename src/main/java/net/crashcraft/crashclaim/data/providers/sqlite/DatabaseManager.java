@@ -78,6 +78,8 @@ public class DatabaseManager {
         registerDataVersion(new DataRev3());
         registerDataVersion(new DataRev4());
         registerDataVersion(new DataRev5());
+        registerDataVersion(new DataRev6());
+        registerDataVersion(new DataRev7());
     }
 
     private void validateDataVersions(){
@@ -90,7 +92,7 @@ public class DatabaseManager {
             }
         }
 
-        if (failedDataVersions.size() > 0){
+        if (!failedDataVersions.isEmpty()){
             StringBuilder builder = new StringBuilder("Data versions failed to initialize. [");
             for (int version : failedDataVersions){
                 builder.append(version).append(", ");

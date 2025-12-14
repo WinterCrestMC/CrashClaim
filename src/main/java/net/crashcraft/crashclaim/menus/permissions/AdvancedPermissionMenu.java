@@ -11,7 +11,7 @@ import net.crashcraft.crashclaim.localization.Localization;
 import net.crashcraft.crashclaim.menus.helpers.MenuListHelper;
 import net.crashcraft.crashclaim.menus.helpers.MenuSwitchType;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
-import net.md_5.bungee.api.chat.BaseComponent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -29,9 +29,9 @@ public class AdvancedPermissionMenu extends MenuListHelper {
 
     public AdvancedPermissionMenu(Player player, BaseClaim claim, UUID uuid, GUI prevMenu) {
         super(player,
-                BaseComponent.toLegacyText(claim instanceof SubClaim ?
-                                Localization.MENU__SUB_CLAIM_ADVANCED_PERMISSIONS__TITLE.getMessage(null) : Localization.MENU__ADVANCED_PERMISSIONS__TITLE.getMessage(null)
-                        ),
+                LegacyComponentSerializer.legacySection().serialize(claim instanceof SubClaim ?
+                    Localization.MENU__SUB_CLAIM_ADVANCED_PERMISSIONS__TITLE.getMessage(null) : Localization.MENU__ADVANCED_PERMISSIONS__TITLE.getMessage(null)
+                ),
                 54, prevMenu);
 
         this.uuid = uuid;
@@ -116,7 +116,7 @@ public class AdvancedPermissionMenu extends MenuListHelper {
                     menuItemlist.put(PermissionRoute.PISTONS, MenuSwitchType.DOUBLE);
                     menuItemlist.put(PermissionRoute.FLUIDS, MenuSwitchType.DOUBLE);
                     menuItemlist.put(PermissionRoute.ENTITY_GRIEF, MenuSwitchType.DOUBLE);
-                    menuItemlist.put(null, null);
+                    menuItemlist.put(PermissionRoute.PVP, MenuSwitchType.DOUBLE);
                     menuItemlist.put(PermissionRoute.VIEW_SUB_CLAIMS, MenuSwitchType.DOUBLE);
                 }
 
@@ -212,7 +212,7 @@ public class AdvancedPermissionMenu extends MenuListHelper {
 
     @Override
     public void invalidPermissions() {
-        player.spigot().sendMessage(Localization.MENU__SIMPLE_PERMISSIONS__NO_PERMISSION.getMessage(player));
+        player.sendMessage(Localization.MENU__SIMPLE_PERMISSIONS__NO_PERMISSION.getMessage(player));
         forceClose();
     }
 

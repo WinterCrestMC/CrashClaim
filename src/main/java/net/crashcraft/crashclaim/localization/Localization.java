@@ -51,6 +51,26 @@ public enum Localization {
     EJECT__SUCCESS("<green>You have successfully ejected that player to the edge of the claim."),
     EJECT__NO_CLAIM("<red>There is no claim where you are standing."),
 
+    BAN__NO_PERMISSION("<red>You do not have the modify permission ability inside this claim."),
+    BAN__HAS_PERMISSION("<red>That player has the modify permissions ability inside this claim and cannot be banned."),
+    BAN__ALREADY_BANNED("<red>That player is already banned."),
+    BAN__EJECTED("<red>You have been banned from the claim you were standing in by another player."),
+    BAN__SUCCESS("<green>You have successfully banned that player to the edge of the claim."),
+    BAN__NO_CLAIM("<red>You must be standing in a claim to ban another player."),
+
+    BAN__LIST_NO_PERMISSION("<red>You do not have permission to view the banned players."),
+    BAN__LIST_NO_CLAIM("<red>You must be standing in a claim to view the banned players."),
+    BAN__LIST_HEADER("<yellow>Banned Players:"),
+    BAN__LIST_PLAYER("<yellow><name>"),
+
+    UNBAN__NO_PERMISSION("<red>You do not have the modify permission ability inside this claim."),
+    UNBAN__NOT_BANNED("<red>That player is not banned."),
+    UNBAN__SELF("<red>You cannot unban yourself."),
+    UNBAN__SUCCESS("<green>You have successfully unbanned that player to the edge of the claim."),
+    UNBAN__INVALID_PLAYER("<red>Unknown player."),
+    UNBAN__NO_CLAIM("<red>You must be standing in a claim to unban another player."),
+    UNBAN__TARGET_NOT_BANNED("<red>That player is not banned."),
+
     HIDE_CLAIMS__SUCCESS("<green>Claim visuals have been hidden."),
     SHOW_CLAIMS__SUCCESS("<green>Claim visuals have been shown."),
 
@@ -233,7 +253,7 @@ public enum Localization {
     ALERT__NO_PERMISSIONS__ENTITIES("<red>You do not have permission to interact with entities in this claim"),
     ALERT__NO_PERMISSIONS__TELEPORT("<red>You do not have permission to teleport to that claim."),
     ALERT__NO_PERMISSIONS__TELEPORT_RELOCATE("<red>You do not have permission to teleport to that claim. You have been relocated outside of it."),
-
+    ALERT__NO_PERMISSIONS__PVP("<red>You do not have permission to PvP in this claim."),
     // General Visuals
 
     MENU__GENERAL__INSUFFICIENT_PERMISSION("<red>You no longer have sufficient permissions to continue"),
@@ -266,6 +286,8 @@ public enum Localization {
     MENU__CLAIM_LIST__TITLE("Claims"),
     MENU__SUB_CLAIM__TITLE("Sub-Claim Settings"),
     MENU__SUB_CLAIM_LIST__TITLE("Sub-Claims"),
+
+    MENU__PERMISSIONS__PLAYER__LOOKUP(Material.PAPER, 1, "Input the player name to search for"),
 
     MENU__CLAIM__RENAME__MESSAGE(Material.PAPER, 1, "Enter new claim name"),
     MENU__CLAIM__RENAME__CONFIRMATION("<green>Change claim name to <gold><name>"),
@@ -410,6 +432,9 @@ public enum Localization {
             "<gold>Mob Griefing",
             "<green>Allows creepers, enderman and other mobs to interact",
             "<green>with blocks inside of the claim"),
+    MENU__PERMISSIONS__PVP(Material.DIAMOND_SWORD, 1,
+            "<gold>PvP",
+            "<green>Allows players to fight in the claim"),
 
     // Menu buttons
 
@@ -490,8 +515,8 @@ public enum Localization {
         }
     }
 
-    public static BaseComponent[] parseRawUserInput(String s){
-        return BungeeComponentSerializer.get().serialize(LocalizationLoader.userParser.deserialize(s));
+    public static Component parseRawUserInput(String s){
+        return LocalizationLoader.userParser.deserialize(s);
     }
 
     public static void rebuildCachedMessages(){
@@ -625,8 +650,8 @@ public enum Localization {
         this.type = localizationType.MESSAGE;
     }
 
-    private BaseComponent[] message;
-    private List<BaseComponent[]> messageList;
+    private Component message;
+    private List<Component> messageList;
 
     Localization(String... defList){
         this.def = null;
@@ -644,38 +669,38 @@ public enum Localization {
         this.item = new ItemStackTemplate(material, stackSize, title, Arrays.asList(loreDef), null, false);
     }
 
-    public BaseComponent[] getMessage(OfflinePlayer player) {
+    public Component getMessage(OfflinePlayer player) {
         if (hasPlaceholders){
             return getMessage(player, new String[0]);
         }
         return message;
     }
 
-    public BaseComponent[] getMessage(OfflinePlayer player, String... replace){
+    public Component getMessage(OfflinePlayer player, String... replace){
         if (hasPlaceholders){
-            return BungeeComponentSerializer.get().serialize(LocalizationLoader.parser.deserialize(LocalizationLoader.placeholderManager.usePlaceholders(player, def), generateTagResolver(replace)));
+            return LocalizationLoader.parser.deserialize(LocalizationLoader.placeholderManager.usePlaceholders(player, def), generateTagResolver(replace));
         }
-        return BungeeComponentSerializer.get().serialize(LocalizationLoader.parser.deserialize(def, generateTagResolver(replace)));
+        return LocalizationLoader.parser.deserialize(def, generateTagResolver(replace));
     }
 
-    public List<BaseComponent[]> getMessageList(OfflinePlayer player) {
+    public List<Component> getMessageList(OfflinePlayer player) {
         if (hasPlaceholders){
             return getMessageList(player, new String[0]);
         }
         return messageList;
     }
 
-    public List<BaseComponent[]> getMessageList(OfflinePlayer player, String... replace){
-        ArrayList<BaseComponent[]> arr = new ArrayList<>(defList.length);
+    public List<Component> getMessageList(OfflinePlayer player, String... replace){
+        ArrayList<Component> arr = new ArrayList<>(defList.length);
 
         if (hasPlaceholders){
             for (String line : defList) {
-                Collections.addAll(arr, BungeeComponentSerializer.get().serialize(LocalizationLoader.parser.deserialize(
-                        LocalizationLoader.placeholderManager.usePlaceholders(player, line), generateTagResolver(replace))));
+                Collections.addAll(arr, LocalizationLoader.parser.deserialize(
+                        LocalizationLoader.placeholderManager.usePlaceholders(player, line), generateTagResolver(replace)));
             }
         } else {
             for (String line : defList) {
-                Collections.addAll(arr, BungeeComponentSerializer.get().serialize(LocalizationLoader.parser.deserialize(line, generateTagResolver(replace))));
+                Collections.addAll(arr, LocalizationLoader.parser.deserialize(line, generateTagResolver(replace)));
             }
         }
 
@@ -812,11 +837,11 @@ public enum Localization {
         this.defList = defList;
     }
 
-    private void setMessage(BaseComponent[] message) {
+    private void setMessage(Component message) {
         this.message = message;
     }
 
-    private void setMessageList(List<BaseComponent[]> messageList) {
+    private void setMessageList(List<Component> messageList) {
         this.messageList = messageList;
     }
 

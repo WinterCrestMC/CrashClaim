@@ -13,6 +13,9 @@ import net.crashcraft.crashclaim.permissions.PermissionHelper;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
 import net.crashcraft.crashclaim.visualize.VisualizationManager;
 import net.crashcraft.crashclaim.visualize.api.VisualGroup;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -42,20 +45,20 @@ public class UnClaimCommand extends BaseCommand {
             message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
             new ConfirmationMenu(player,
-                    Localization.UN_CLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
+                    asBungee(Localization.UN_CLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
                     message,
                     Localization.UN_CLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_CLAIM__MENU__CONFIRMATION__DENY.getItem(player),
                     (p, aBoolean) -> {
                         if (aBoolean) {
                             if (!PermissionHelper.getPermissionHelper().hasPermission(claim, p.getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
-                                player.spigot().sendMessage(Localization.UN_CLAIM__NO_PERMISSION.getMessage(player));
+                                player.sendMessage(Localization.UN_CLAIM__NO_PERMISSION.getMessage(player));
                                 return "";
                             }
 
                             for (SubClaim subClaim : claim.getSubClaims()){
                                 if (!PermissionHelper.getPermissionHelper().hasPermission(subClaim, p.getUniqueId(), PermissionRoute.MODIFY_CLAIM)){
-                                    player.spigot().sendMessage(Localization.UN_CLAIM__NO_PERMISSION_IN_ALL.getMessage(player));
+                                    player.sendMessage(Localization.UN_CLAIM__NO_PERMISSION_IN_ALL.getMessage(player));
                                     return "";
                                 }
                             }
@@ -69,7 +72,7 @@ public class UnClaimCommand extends BaseCommand {
                         return "";
                     }, p -> "").open();
         } else {
-            player.spigot().sendMessage(Localization.UN_CLAIM__NO_CLAIM.getMessage(player));
+            player.sendMessage(Localization.UN_CLAIM__NO_CLAIM.getMessage(player));
         }
     }
 
@@ -81,7 +84,7 @@ public class UnClaimCommand extends BaseCommand {
 
         if (claims.size() > 0) {
             new ConfirmationMenu(player,
-                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player),
+                    asBungee(Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player)),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__MESSAGE.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__DENY.getItem(player),
@@ -91,13 +94,13 @@ public class UnClaimCommand extends BaseCommand {
                                 String name = claim.getName();
 
                                 if (!PermissionHelper.getPermissionHelper().hasPermission(claim, p.getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
-                                    player.spigot().sendMessage(Localization.UN_CLAIM_ALL__NO_PERMISSION.getMessage(player, "name", name));
+                                    player.sendMessage(Localization.UN_CLAIM_ALL__NO_PERMISSION.getMessage(player, "name", name));
                                     return "";
                                 }
 
                                 for (SubClaim subClaim : claim.getSubClaims()) {
                                     if (!PermissionHelper.getPermissionHelper().hasPermission(subClaim, p.getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
-                                        player.spigot().sendMessage(Localization.UN_CLAIM_ALL__NO_PERMISSION_IN_ALL.getMessage(player, "name", name));
+                                        player.sendMessage(Localization.UN_CLAIM_ALL__NO_PERMISSION_IN_ALL.getMessage(player, "name", name));
                                         return "";
                                     }
                                 }
@@ -112,7 +115,7 @@ public class UnClaimCommand extends BaseCommand {
                         return "";
                     }, p -> "").open();
         } else {
-            player.spigot().sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
+            player.sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
         }
     }
 
@@ -123,7 +126,7 @@ public class UnClaimCommand extends BaseCommand {
 
         if (claims.size() > 0) {
             new ConfirmationMenu(player,
-                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player),
+                    asBungee(Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player)),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__MESSAGE.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__DENY.getItem(player),
@@ -150,7 +153,11 @@ public class UnClaimCommand extends BaseCommand {
                         return "";
                     }, p -> "").open();
         } else {
-            player.spigot().sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
+            player.sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
         }
+    }
+
+    private BaseComponent[] asBungee(Component component){
+        return BungeeComponentSerializer.get().serialize(component);
     }
 }

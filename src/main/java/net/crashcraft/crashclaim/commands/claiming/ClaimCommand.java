@@ -4,7 +4,6 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.taskchain.TaskChain;
-import com.comphenix.protocol.ProtocolManager;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.SubClaim;
@@ -40,7 +39,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
     private final HashMap<UUID, ClaimMode> stateMap;
     private final HashMap<UUID, Claim> claimMap;
 
-    public ClaimCommand(ClaimDataManager dataManager, VisualizationManager visualizationManager, ProtocolManager protocolManager){
+    public ClaimCommand(ClaimDataManager dataManager, VisualizationManager visualizationManager){
         this.dataManager = dataManager;
         this.visualizationManager = visualizationManager;
         this.modeMap = new HashMap<>();
@@ -48,7 +47,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
         this.claimMap = new HashMap<>();
 
         Bukkit.getPluginManager().registerEvents(this, CrashClaim.getPlugin());
-        new ProtocalListener(protocolManager, CrashClaim.getPlugin(), this);
+        new ProtocalListener(CrashClaim.getPlugin(), this);
     }
 
     @CommandAlias("claim")
@@ -72,7 +71,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
             modeMap.put(uuid, ClickState.CLAIM);
             visualizationManager.visualizeSurroundingClaims(player, dataManager);
             visualizationManager.sendAlert(player, Localization.CLAIM__ENABLED.getMessage(player));
-            player.spigot().sendMessage(Localization.NEW_CLAIM__INFO.getMessage(player));
+            player.sendMessage(Localization.NEW_CLAIM__INFO.getMessage(player));
         }
     }
 
@@ -98,17 +97,17 @@ public class ClaimCommand extends BaseCommand implements Listener {
 
             Claim claim = dataManager.getClaim(location.getBlockX(), location.getBlockZ(), player.getWorld().getUID());
             if (claim == null) {
-                player.spigot().sendMessage(Localization.SUBCLAIM__NO_CLAIM.getMessage(player));
+                player.sendMessage(Localization.SUBCLAIM__NO_CLAIM.getMessage(player));
                 return;
             }
 
             if (!PermissionHelper.getPermissionHelper().hasPermission(claim, uuid, PermissionRoute.MODIFY_CLAIM)) {
-                player.spigot().sendMessage(Localization.SUBCLAIM__NO_PERMISSION.getMessage(player));
+                player.sendMessage(Localization.SUBCLAIM__NO_PERMISSION.getMessage(player));
                 return;
             }
 
             if (claim.isEditing()){
-                player.spigot().sendMessage(Localization.SUBCLAIM__ALREADY_RESIZING.getMessage(player));
+                player.sendMessage(Localization.SUBCLAIM__ALREADY_RESIZING.getMessage(player));
                 return;
             }
 
@@ -119,7 +118,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
             visualizationManager.visualizeSurroundingSubClaims(claim, player);
 
             visualizationManager.sendAlert(player, Localization.SUBCLAIM__ENABLED.getMessage(player));
-            player.spigot().sendMessage(Localization.NEW_SUBCLAIM__INFO.getMessage(player));
+            player.sendMessage(Localization.NEW_SUBCLAIM__INFO.getMessage(player));
         }
     }
 
@@ -200,7 +199,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
                     SubClaim subClaim = parent.getSubClaim(location.getBlockX(), location.getBlockZ());
                     if (subClaim != null) {
                         if (!PermissionHelper.getPermissionHelper().hasPermission(subClaim, uuid, PermissionRoute.MODIFY_CLAIM)) {
-                            player.spigot().sendMessage(Localization.SUBCLAIM__NO_PERMISSION.getMessage(player));
+                            player.sendMessage(Localization.SUBCLAIM__NO_PERMISSION.getMessage(player));
                             return;
                         }
 

@@ -73,6 +73,10 @@ public class PlayerListener implements Listener {
                         continue;
                     }
 
+                    if (helper.hasPermission(player.getUniqueId(), player.getLocation(), PermissionRoute.PVP) && helper.hasPermission(shooter.getUniqueId(), shooter.getLocation(), PermissionRoute.PVP)){
+                        continue;
+                    }
+
                     e.setCancelled(true);
                     visuals.sendAlert(player, Localization.PVP_DISABLED_INSIDE_CLAIM.getMessage(player));
                 } else if (!helper.hasPermission(shooter.getUniqueId(), livingEntity.getLocation(), PermissionRoute.ENTITIES)){
@@ -111,7 +115,7 @@ public class PlayerListener implements Listener {
         TextComponent component = new TextComponent(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', message)));
         component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:tp " + owner.getName() + " " + claim.getCenterX() + "~" + claim.getCenterZ()));
         if (owner != null) {
-            owner.spigot().sendMessage(component);
+            owner.sendMessage(component);
         }
         manager.deleteClaim(claim);
     }
@@ -278,7 +282,9 @@ public class PlayerListener implements Listener {
 
     @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onTeleportEvent(PlayerTeleportEvent event){
-        if (GlobalConfig.disabled_worlds.contains(event.getTo().getWorld().getUID())){
+        Location to = event.getTo();
+
+        if (GlobalConfig.disabled_worlds.contains(to.getWorld().getUID())){
             return;
         }
 
@@ -286,7 +292,20 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        Location location = event.getTo();
+        Claim claim = manager.getClaim(to.getBlockX(), to.getBlockY(), to.getWorld().getUID());
+
+        if (claim != null){
+            SubClaim subClaim = claim.getSubClaim(to.getBlockX(), to.getBlockY());
+            BaseClaim base = checkBan(claim, subClaim, event.getPlayer().getUniqueId());
+
+            if (base.isBanned(event.getPlayer().getUniqueId())){
+                // TODO: Error message
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        Location location = to;
         switch (GlobalConfig.teleportCause.get(event.getCause())){
             case 0: //Disable
                 return;
@@ -300,7 +319,6 @@ public class PlayerListener implements Listener {
                 if (!helper.hasPermission(event.getPlayer().getUniqueId(), location, PermissionRoute.TELEPORTATION)){
                     visuals.sendAlert(event.getPlayer(), Localization.ALERT__NO_PERMISSIONS__TELEPORT_RELOCATE.getMessage(event.getPlayer()));
 
-                    Claim claim = manager.getClaim(location.getBlockX(), location.getBlockZ(), location.getWorld().getUID());
                     if (claim != null) {
                         int distMax = Math.abs(location.getBlockX() - claim.getMaxX());
                         int distMin = Math.abs(location.getBlockX() - claim.getMinX());
@@ -365,6 +383,13 @@ public class PlayerListener implements Listener {
                         return;
                     }
 
+                    if (to.isBanned(player.getUniqueId())){
+                        if (GlobalConfig.useCommandInsteadOfEdgeEject) {
+                            player.performCommand(GlobalConfig.claimEjectCommand);
+                        }
+                        return;
+                    }
+
                     if (to.getEntryMessage() != null){
                         visuals.sendAlert(player,to.getParsedEntryMessage());
                     } else if (from.getEntryMessage() != null){
@@ -385,6 +410,7 @@ public class PlayerListener implements Listener {
         }
     }
 
+
     private BaseClaim check(Claim claim, SubClaim subClaim){
         if (subClaim != null) {
             if (subClaim.getEntryMessage() != null || subClaim.getExitMessage() != null) {
@@ -393,6 +419,18 @@ public class PlayerListener implements Listener {
                 return claim;
             }
         } else {
+            return claim;
+        }
+    }
+
+    private BaseClaim checkBan(Claim claim, SubClaim subClaim, UUID player){
+        if (claim.isBanned(player)){
+            return claim;
+        }
+        else if (subClaim != null && subClaim.isBanned(player)){
+            return subClaim;
+        }
+        else {
             return claim;
         }
     }
@@ -409,13 +447,10 @@ public class PlayerListener implements Listener {
 
         // Handle pvp inside claims
         if (e.getEntity() instanceof Player player){
-            if (!GlobalConfig.blockPvPInsideClaims){
-                return;
-            }
-
             Entity damager = e.getDamager();
+
             if (damager instanceof Player attacker) {
-                if (inClaim(player) || inClaim(attacker)) {
+                if (!helper.hasPermission(attacker.getUniqueId(), attacker.getLocation(), PermissionRoute.PVP) || !helper.hasPermission(player.getUniqueId(), player.getLocation(), PermissionRoute.PVP)){
                     e.setCancelled(true);
                     attacker.sendActionBar(Localization.PVP_DISABLED_INSIDE_CLAIM.getMessage(attacker));
                 }
@@ -427,7 +462,7 @@ public class PlayerListener implements Listener {
                 }
 
                 if (proj.getShooter() instanceof Player shooter) {
-                    if (inClaim(player) || inClaim(shooter)) {
+                    if (!helper.hasPermission(shooter.getUniqueId(), shooter.getLocation(), PermissionRoute.PVP) || !helper.hasPermission(player.getUniqueId(), player.getLocation(), PermissionRoute.PVP)){
                         e.setCancelled(true);
 
                         if (proj instanceof Arrow arrow) { // Remove fire damage
@@ -638,6 +673,10 @@ public class PlayerListener implements Listener {
         Player player = e.getPlayer();
 
         if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+            return;
+        }
+
+        if (QuickShopListener.isExempt(e)){
             return;
         }
 

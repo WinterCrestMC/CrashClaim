@@ -7,6 +7,9 @@ import co.aikar.idb.DbRow;
 import co.aikar.idb.PooledDatabaseOptions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.PermState;
@@ -240,6 +243,7 @@ public class SQLiteDataProvider implements DataProvider {
                 claimData_id = DB.getFirstColumn("SELECT data FROM claims WHERE claims.id = ?", claim.getId());
             }
             savePermissions(claimData_id, claim.getPerms());
+            saveBannedPlayers(claimData_id, claim.getBannedPlayers());
 
             //Sub Claim
             for (SubClaim subClaim : claim.getSubClaims()) {
@@ -274,6 +278,7 @@ public class SQLiteDataProvider implements DataProvider {
                     subClaimData_id = DB.getFirstColumn("SELECT data FROM subclaims WHERE subclaims.id = ?", subClaim.getId());
                 }
                 savePermissions(subClaimData_id, subClaim.getPerms());
+                saveBannedPlayers(subClaimData_id, subClaim.getBannedPlayers());
             }
 
             //Fetch and delete outdated subClaims
@@ -297,12 +302,21 @@ public class SQLiteDataProvider implements DataProvider {
         }
     }
 
+    private void saveBannedPlayers(int data_id, Collection<UUID> bannedPlayers) throws SQLException{
+        // Override any existing data
+        DB.executeUpdate("DELETE FROM banned_players WHERE data_id = ?", data_id);
+
+        for (UUID bannedPlayer : bannedPlayers){
+            DB.executeUpdate("INSERT INTO banned_players(data_id, banned_uuid) VALUES (?, ?)", data_id, bannedPlayer.toString());
+        }
+    }
+
     private void savePermissions(int data_id, PermissionGroup group) throws SQLException{
         GlobalPermissionSet global = group.getGlobalPermissionSet();
 
-        DB.executeUpdate("INSERT INTO permission_set(data_id, players_id, build, interactions, entities, explosions, entityGrief, teleportation, defaultContainer, viewSubClaims, pistons, fluids) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (data_id, players_id) DO UPDATE SET " +
-                        "build = ?, interactions = ?, entities = ?, explosions = ?, entityGrief = ?, teleportation = ?, defaultContainer = ?, viewSubClaims = ?, pistons = ?, fluids = ?",
+        DB.executeUpdate("INSERT INTO permission_set(data_id, players_id, build, interactions, entities, explosions, entityGrief, teleportation, defaultContainer, viewSubClaims, pistons, fluids, pvp) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (data_id, players_id) DO UPDATE SET " +
+                        "build = ?, interactions = ?, entities = ?, explosions = ?, entityGrief = ?, teleportation = ?, defaultContainer = ?, viewSubClaims = ?, pistons = ?, fluids = ?, pvp = ?",
                 data_id,
                 -1,
                 global.getBuild(),
@@ -315,6 +329,7 @@ public class SQLiteDataProvider implements DataProvider {
                 global.getViewSubClaims(),
                 global.getPistons(),
                 global.getFluids(),
+                global.getPvp(),
                 //For replacing
                 global.getBuild(),
                 global.getInteractions(),
@@ -325,7 +340,8 @@ public class SQLiteDataProvider implements DataProvider {
                 global.getDefaultConatinerValue(),
                 global.getViewSubClaims(),
                 global.getPistons(),
-                global.getFluids()
+                global.getFluids(),
+                global.getPvp()
         );
 
         addContainers(data_id, -1, global.getContainers());
@@ -338,9 +354,9 @@ public class SQLiteDataProvider implements DataProvider {
 
             int player_id = DB.getFirstColumn("SELECT id FROM players WHERE uuid = ?", uuid.toString());
 
-            DB.executeUpdate("INSERT INTO permission_set(data_id, players_id, build, interactions, entities, teleportation, defaultContainer, viewSubClaims, modifyPermissions, modifyClaim) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (data_id, players_id) DO UPDATE SET " +
-                            "build = ?, interactions = ?, entities = ?, teleportation = ?, defaultContainer = ?, viewSubClaims = ?, modifyPermissions = ?, modifyClaim = ?",
+            DB.executeUpdate("INSERT INTO permission_set(data_id, players_id, build, interactions, entities, teleportation, defaultContainer, viewSubClaims, modifyPermissions, modifyClaim, pvp) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (data_id, players_id) DO UPDATE SET " +
+                            "build = ?, interactions = ?, entities = ?, teleportation = ?, defaultContainer = ?, viewSubClaims = ?, modifyPermissions = ?, modifyClaim = ?, pvp = ?",
                     data_id,
                     player_id,
                     perms.getBuild(),
@@ -351,6 +367,7 @@ public class SQLiteDataProvider implements DataProvider {
                     perms.getViewSubClaims(),
                     perms.getModifyPermissions(),
                     perms.getModifyClaim(),
+                    perms.getPvp(),
                     //for replacing
                     perms.getBuild(),
                     perms.getInteractions(),
@@ -359,7 +376,8 @@ public class SQLiteDataProvider implements DataProvider {
                     perms.getDefaultConatinerValue(),
                     perms.getViewSubClaims(),
                     perms.getModifyPermissions(),
-                    perms.getModifyClaim()
+                    perms.getModifyClaim(),
+                    perms.getPvp()
             );
 
             addContainers(data_id, player_id, perms.getContainers());
@@ -455,6 +473,8 @@ public class SQLiteDataProvider implements DataProvider {
                     getPlayerPermissions(data_id)
             );
 
+            List<UUID> bannedPlayers = getBannedPlayers(data_id);
+
             UUID world = UUID.fromString(claimDataRow.getString("world_uuid"));
 
             Claim claim = new Claim(id,
@@ -464,7 +484,8 @@ public class SQLiteDataProvider implements DataProvider {
                     claimDataRow.getInt("minZ"),
                     world,
                     group,
-                    owner
+                    owner,
+                bannedPlayers
             );
 
             claim.setName(claimDataRow.getString("name"), false);
@@ -517,7 +538,8 @@ public class SQLiteDataProvider implements DataProvider {
                         row.getInt("minX"),
                         row.getInt("minZ"),
                         world,
-                        subClaim_group
+                        subClaim_group,
+                    bannedPlayers
                 );
 
                 subClaim.setName(row.getString("name"), false);
@@ -564,7 +586,7 @@ public class SQLiteDataProvider implements DataProvider {
     }
 
     private GlobalPermissionSet getGlobalPermissionSet(int data_id) throws SQLException{
-        DbRow globalPermissionRow = DB.getFirstRow("SELECT build, interactions, entities, explosions, entityGrief, teleportation, viewSubClaims, pistons, fluids, defaultContainer FROM permission_set " +
+        DbRow globalPermissionRow = DB.getFirstRow("SELECT build, interactions, entities, explosions, entityGrief, teleportation, viewSubClaims, pistons, fluids, defaultContainer, pvp FROM permission_set " +
                 "WHERE data_id = ? AND players_id = -1", data_id);
 
         HashMap<Material, Integer> globalContainers = new HashMap<>();
@@ -583,14 +605,15 @@ public class SQLiteDataProvider implements DataProvider {
                 globalContainers,
                 globalPermissionRow.getInt("defaultContainer"),
                 globalPermissionRow.getInt("pistons"),
-                globalPermissionRow.getInt("fluids")
+                globalPermissionRow.getInt("fluids"),
+                globalPermissionRow.getInt("pvp")
         );
     }
 
     private HashMap<UUID, PlayerPermissionSet> getPlayerPermissions(int data_id) throws SQLException{
         HashMap<UUID, PlayerPermissionSet> perms = new HashMap<>();
 
-        for (DbRow permissionRow : DB.getResults("SELECT players_id, (SELECT uuid FROM players WHERE players.id = permission_set.players_id) AS uuid, build, interactions, entities, teleportation, viewSubClaims, defaultContainer, modifyPermissions, modifyClaim FROM permission_set " +
+        for (DbRow permissionRow : DB.getResults("SELECT players_id, (SELECT uuid FROM players WHERE players.id = permission_set.players_id) AS uuid, build, interactions, entities, teleportation, viewSubClaims, defaultContainer, modifyPermissions, modifyClaim, pvp FROM permission_set " +
                 "WHERE data_id = ? AND players_id IS NOT -1", data_id)){
 
             HashMap<Material, Integer> containers = new HashMap<>();
@@ -609,12 +632,23 @@ public class SQLiteDataProvider implements DataProvider {
                     containers,
                     permissionRow.getInt("defaultContainer"),
                     permissionRow.getInt("modifyPermissions"),
-                    permissionRow.getInt("modifyClaim")
+                    permissionRow.getInt("modifyClaim"),
+                permissionRow.getInt("pvp")
             );
 
             perms.put(UUID.fromString(permissionRow.getString("uuid")), set);
         }
 
         return perms;
+    }
+
+    private List<UUID> getBannedPlayers(int data_id) throws SQLException {
+        List<UUID> bannedPlayers = new ArrayList<>();
+
+        for (DbRow bannedPlayerRow : DB.getResults("SELECT banned_uuid FROM banned_players WHERE data_id = ?", data_id)){
+            bannedPlayers.add(UUID.fromString(bannedPlayerRow.getString("banned_uuid")));
+        }
+
+        return bannedPlayers;
     }
 }

@@ -1,11 +1,13 @@
 package net.crashcraft.crashclaim.listeners;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListener;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity.InteractAction;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.commands.claiming.ClaimCommand;
 import net.crashcraft.crashclaim.visualize.api.BaseVisual;
@@ -15,38 +17,53 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-public class ProtocalListener {
-    public ProtocalListener(ProtocolManager protocolManager, CrashClaim crashClaim, ClaimCommand command){
-        protocolManager.addPacketListener(
-                new PacketAdapter(crashClaim, ListenerPriority.NORMAL, PacketType.Play.Client.USE_ENTITY) {
-                    @Override
-                    public void onPacketReceiving(PacketEvent event){
-                        PacketContainer packet = event.getPacket();
+public class ProtocalListener implements PacketListener {
+    private final CrashClaim crashClaim;
+    private final ClaimCommand command;
 
-                        if (crashClaim.getWrapper().isInteractAndMainHand(packet)){
-                            Player player = event.getPlayer();
+    public ProtocalListener(CrashClaim crashClaim, ClaimCommand command){
+        this.crashClaim = crashClaim;
+        this.command = command;
 
-                            if (player == null)
-                                return;
+        PacketEvents.getAPI().getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
+    }
 
-                            VisualGroup group = crashClaim.getVisualizationManager().fetchVisualGroup(player, false);
+    @Override
+    public void onPacketReceive(PacketReceiveEvent event) {
+        if (event.getPacketType() != Client.INTERACT_ENTITY) {
+            return;
+        }
 
-                            if (group == null)
-                                return;
+        WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
 
-                            int id = packet.getIntegers().read(0);
+        if (wrapper.getHand() != InteractionHand.MAIN_HAND) {
+            return;
+        }
 
-                            for (BaseVisual visual : group.getActiveVisuals()){
-                                if (visual instanceof BaseGlowVisual glowVisual) {
-                                    Location location = glowVisual.getEntityLocation(id);
-                                    if (location != null) {
-                                        Bukkit.getScheduler().runTask(plugin, () -> command.click(player, location));
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+        if (wrapper.getAction() != InteractAction.INTERACT) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+
+        if (player == null)
+            return;
+
+        VisualGroup group = crashClaim.getVisualizationManager().fetchVisualGroup(player, false);
+
+        if (group == null)
+            return;
+
+        int id = wrapper.getEntityId();
+
+        for (BaseVisual visual : group.getActiveVisuals()){
+            if (visual instanceof BaseGlowVisual glowVisual) {
+                Location location = glowVisual.getEntityLocation(id);
+                if (location != null) {
+                    Bukkit.getScheduler().runTask(crashClaim, () -> command.click(player, location));
+                    return;
+                }
+            }
+        }
     }
 }

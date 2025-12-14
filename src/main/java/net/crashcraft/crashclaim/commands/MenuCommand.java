@@ -18,6 +18,9 @@ import net.crashcraft.crashclaim.visualize.VisualizationManager;
 import net.crashcraft.crashclaim.visualize.api.BaseVisual;
 import net.crashcraft.crashclaim.visualize.api.VisualColor;
 import net.crashcraft.crashclaim.visualize.api.VisualGroup;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -46,7 +49,7 @@ public class MenuCommand extends BaseCommand {
         if (claim != null){
             new ClaimMenu(player, claim, null).open();
         } else {
-            player.spigot().sendMessage(Localization.CLAIM_SETTINGS__NO_CLAIM.getMessage(player));
+            player.sendMessage(Localization.CLAIM_SETTINGS__NO_CLAIM.getMessage(player));
         }
     }
 
@@ -60,7 +63,7 @@ public class MenuCommand extends BaseCommand {
             message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
             new ConfirmationMenu(player,
-                    Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
+                    asBungee(Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
                     message,
                     Localization.UN_SUBCLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_SUBCLAIM__MENU__CONFIRMATION__DENY.getItem(player),
@@ -79,13 +82,17 @@ public class MenuCommand extends BaseCommand {
                                     visualizationManager.deSpawnAfter(visual, 10);
                                 }
                             } else {
-                                player.spigot().sendMessage(Localization.UN_SUBCLAIM__MENU__NO_PERMISSION.getMessage(player));
+                                player.sendMessage(Localization.UN_SUBCLAIM__MENU__NO_PERMISSION.getMessage(player));
                             }
                         }
                         return "";
                     }, p -> "").open();
         } else {
-            player.spigot().sendMessage(Localization.UN_SUBCLAIM__MENU__NO_CLAIM.getMessage(player));
+            player.sendMessage(Localization.UN_SUBCLAIM__MENU__NO_CLAIM.getMessage(player));
         }
+    }
+
+    private BaseComponent[] asBungee(Component component){
+        return BungeeComponentSerializer.get().serialize(component);
     }
 }
