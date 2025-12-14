@@ -6,23 +6,18 @@ plugins {
 
 repositories {
     mavenLocal()
-    maven("https://repo.codemc.io/repository/maven-snapshots/")
-    maven("https://ci.ender.zone/plugin/repository/everything/")
-    maven("https://repo.aikar.co/content/groups/aikar/")
-    maven("https://repo.dmulloy2.net/repository/releases/")
-    maven("https://papermc.io/repo/repository/maven-public/")
-    maven("https://jcenter.bintray.com")
-    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://repo.dmulloy2.net/repository/public/") // ProtocolLib
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // PlaceholderAPI
+    maven("https://repo.papermc.io/repository/maven-public/") // PaperMC
     maven("https://jitpack.io")
-    maven("https://nexus.wesjd.net/repository/thirdparty/")
-    maven("https://oss.sonatype.org/content/repositories/snapshots/")
-    maven("https://maven.enginehub.org/repo/")
+    maven("https://repo.aikar.co/content/groups/aikar/") //aikar
+    maven("https://repo.codemc.io/repository/maven-snapshots/") //anvilgui
+    maven("https://repo.mikeprimm.com/") //dynmap
+    maven("https://maven.enginehub.org/repo/") //worldguard
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.mikeprimm.com/")
-    maven("https://repo.maven.apache.org/maven2/")
-    maven("https://repo.dmulloy2.net/repository/public/")
+    maven("https://nexus.wesjd.net/repository/thirdparty/")
     maven("https://repo.opencollab.dev/main/")
-    maven("https://repo.codemc.io/repository/maven-releases/")
 
     maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
@@ -30,14 +25,13 @@ repositories {
 
     mavenCentral()
 }
-
 dependencies {
     // Custom Utils
-    implementation("com.github.CrashCraftNetwork:CrashUtils:master-SNAPSHOT")
-    compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
+     implementation("com.github.CrashCraftNetwork:CrashUtils:master-SNAPSHOT")
+     compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
 
     // Adventure
     val adventure = "4.19.0"
@@ -47,7 +41,7 @@ dependencies {
 
     // Other
     implementation("co.aikar:taskchain-bukkit:3.7.2")
-    implementation("net.wesjd:anvilgui:1.10.4-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.10.8-SNAPSHOT")
     implementation("co.aikar:fastutil-base:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longbase:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longhashmap:3.0-SNAPSHOT")
@@ -60,18 +54,22 @@ dependencies {
     implementation("com.github.retrooper:packetevents-spigot:2.7.0")
 
     compileOnly("com.google.guava:guava:31.1-jre")
-    //compileOnly( "com.comphenix.protocol:ProtocolLib:4.7.1-SNAPSHOT")
-    // compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT")
-    compileOnly( "net.milkbowl.vault:VaultAPI:1.7")
-    compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.5")
+
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.4.0-SNAPSHOT")
+    compileOnly( "net.milkbowl.vault:VaultAPI:1.7"){
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
+    compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.14")
     compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")
     compileOnly("com.ghostchu:quickshop-bukkit:6.1.0.0-SNAPSHOT")
     compileOnly("com.ghostchu:quickshop-common:6.1.0.0-SNAPSHOT")
     compileOnly("com.ghostchu:quickshop-api:6.1.0.0-SNAPSHOT")
-    compileOnly( "me.clip:placeholderapi:2.10.10")
-    compileOnly( "us.dynmap:dynmap-api:3.2-SNAPSHOT")
+    compileOnly("me.clip:placeholderapi:2.11.5")
+    compileOnly("us.dynmap:dynmap-api:3.2-SNAPSHOT") {
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
     compileOnly("net.luckperms:api:5.4")
-
+    implementation("commons-lang:commons-lang:2.6")
     // Cache2k
     val cache2kVersion = "2.6.1.Final"
 
