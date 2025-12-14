@@ -6,12 +6,14 @@ plugins {
 
 repositories {
     mavenLocal()
+    maven("https://repo.codemc.io/repository/maven-snapshots/") //anvilgui
+    maven("https://repo.codemc.io/repository/maven-releases/") //packetevents
     maven("https://repo.dmulloy2.net/repository/public/") // ProtocolLib
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // PlaceholderAPI
     maven("https://repo.papermc.io/repository/maven-public/") // PaperMC
     maven("https://jitpack.io")
     maven("https://repo.aikar.co/content/groups/aikar/") //aikar
-    maven("https://repo.codemc.io/repository/maven-snapshots/") //anvilgui
+
     maven("https://repo.mikeprimm.com/") //dynmap
     maven("https://maven.enginehub.org/repo/") //worldguard
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
@@ -51,7 +53,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.bstats:bstats-bukkit:3.0.1")
 
-    implementation("com.github.retrooper:packetevents-spigot:2.7.0")
+    implementation("com.github.retrooper:packetevents-spigot:2.11.0")
 
     compileOnly("com.google.guava:guava:31.1-jre")
 
