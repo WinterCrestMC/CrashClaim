@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("maven-publish")
     id("com.gradleup.shadow") version "8.3.0"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 repositories {
@@ -131,4 +132,12 @@ publishing {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+}
+
+tasks.runServer {
+    minecraftVersion("1.21.8")
+
+    downloadPlugins {
+        url("https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar")
+    }
 }

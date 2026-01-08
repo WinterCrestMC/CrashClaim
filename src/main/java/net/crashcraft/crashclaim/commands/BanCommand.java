@@ -74,7 +74,7 @@ public class BanCommand extends BaseCommand {
         claim.ban(otherPlayer.getUniqueId());
 
         Player onlinePlayer = otherPlayer.getPlayer();
-        if (onlinePlayer != null) {
+        if (onlinePlayer != null && claim.isInside(onlinePlayer.getLocation())) {
             if (GlobalConfig.useCommandInsteadOfEdgeEject) {
                 onlinePlayer.performCommand(GlobalConfig.claimEjectCommand);
             } else {

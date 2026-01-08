@@ -3,11 +3,13 @@ package net.crashcraft.crashclaim.claimobjects;
 import java.util.List;
 import java.util.Set;
 import net.crashcraft.crashclaim.CrashClaim;
+import net.crashcraft.crashclaim.data.MathUtils;
 import net.crashcraft.crashclaim.localization.Localization;
 import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 
 import java.util.UUID;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public abstract class BaseClaim {
@@ -74,6 +76,12 @@ public abstract class BaseClaim {
 
     public int getAreaBlocks() {
         return (maxCornerX - minCornerX) * (maxCornerZ - minCornerZ);
+    }
+
+    public boolean isInside(Location location){
+        if (location == null) return false;
+        if (!location.getWorld().getUID().equals(getWorld())) return false;
+        return MathUtils.iskPointCollide(minCornerX, minCornerZ, maxCornerX, maxCornerZ, location.getBlockX(), location.getBlockZ());
     }
 
     /**

@@ -1,5 +1,6 @@
 package net.crashcraft.crashclaim.listeners;
 
+import io.papermc.lib.PaperLib;
 import net.crashcraft.crashclaim.claimobjects.BaseClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.SubClaim;
@@ -344,11 +345,12 @@ public class PlayerListener implements Listener {
         final int fromZ = e.getFrom().getBlockZ();
         final int toX = e.getTo().getBlockX();
         final int toZ = e.getTo().getBlockZ();
-        final UUID world = e.getTo().getWorld().getUID();
+        final World world = e.getTo().getWorld();
+        final UUID worldId = world.getUID();
         final Player player = e.getPlayer();
 
         if((GlobalConfig.checkEntryExitWhileFlying || (!player.isGliding() && !player.isFlying())) && (fromX != toX || fromZ != toZ)) {
-            if (GlobalConfig.disabled_worlds.contains(world)){
+            if (GlobalConfig.disabled_worlds.contains(worldId)){
                 return;
             }
 
@@ -361,8 +363,8 @@ public class PlayerListener implements Listener {
                 Parent claim needs to have entry null to play sub claim exit on enter to parent claim
              */
 
-            Claim toClaim = manager.getClaim(toX, toZ, world);
-            Claim fromClaim = manager.getClaim(fromX, fromZ, world);
+            Claim toClaim = manager.getClaim(toX, toZ, worldId);
+            Claim fromClaim = manager.getClaim(fromX, fromZ, worldId);
 
             BaseClaim to = null;
             BaseClaim from = null;
@@ -378,15 +380,17 @@ public class PlayerListener implements Listener {
             }
 
             if (to != null){
+                if (to.isBanned(player.getUniqueId())){
+                    if (GlobalConfig.useCommandInsteadOfEdgeEject) {
+                        player.performCommand(GlobalConfig.claimEjectCommand);
+                    } else {
+                        e.setCancelled(true);
+                    }
+                    return;
+                }
+
                 if (from != null){
                     if (to.equals(from)){
-                        return;
-                    }
-
-                    if (to.isBanned(player.getUniqueId())){
-                        if (GlobalConfig.useCommandInsteadOfEdgeEject) {
-                            player.performCommand(GlobalConfig.claimEjectCommand);
-                        }
                         return;
                     }
 

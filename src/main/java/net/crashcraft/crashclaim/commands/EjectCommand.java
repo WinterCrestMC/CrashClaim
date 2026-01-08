@@ -39,47 +39,48 @@ public class EjectCommand extends BaseCommand {
 
         Location location = player.getLocation();
         Claim claim = manager.getClaim(location.getBlockX(), location.getBlockZ(), location.getWorld().getUID());
-        if (claim != null){
-            if (!PermissionHelper.getPermissionHelper().hasPermission(player.getUniqueId(), player.getLocation(), PermissionRoute.MODIFY_PERMISSIONS)){
-                player.sendMessage(Localization.EJECT__NO_PERMISSION.getMessage(player));
-                return;
-            }
-
-            Location otherLocation = otherPlayer.getLocation();
-            Claim otherClaim = manager.getClaim(otherLocation.getBlockX(), otherLocation.getBlockZ(), otherLocation.getWorld().getUID());
-
-            if (!claim.equals(otherClaim)){
-                player.sendMessage(Localization.EJECT__NOT_SAME_CLAIM.getMessage(player));
-                return;
-            }
-
-            if (PermissionHelper.getPermissionHelper().hasPermission(otherPlayer.getUniqueId(), otherPlayer.getLocation(), PermissionRoute.MODIFY_PERMISSIONS)){
-                player.sendMessage(Localization.EJECT__HAS_PERMISSION.getMessage(player));
-                return;
-            }
-
-            if (GlobalConfig.useCommandInsteadOfEdgeEject){
-                otherPlayer.performCommand(GlobalConfig.claimEjectCommand);
-            } else {
-                int distMax = Math.abs(location.getBlockX() - claim.getMaxX());
-                int distMin = Math.abs(location.getBlockX() - claim.getMinX());
-
-                World world = location.getWorld();
-                if (distMax > distMin) {    //Find closest side
-                    PaperLib.teleportAsync(otherPlayer, new Location(world, claim.getMinX() - 1,
-                            world.getHighestBlockYAt(claim.getMinX() - 1,
-                                    location.getBlockZ()), location.getBlockZ()));
-                } else {
-                    PaperLib.teleportAsync(otherPlayer, new Location(world, claim.getMaxX() + 1,
-                            world.getHighestBlockYAt(claim.getMaxX() + 1,
-                                    location.getBlockZ()), location.getBlockZ()));
-                }
-            }
-
-            otherPlayer.sendMessage(Localization.EJECT__BEEN_EJECTED.getMessage(otherPlayer));
-            player.sendMessage(Localization.EJECT__SUCCESS.getMessage(player));
-        } else {
+        if (claim == null) {
             player.sendMessage(Localization.EJECT__NO_CLAIM.getMessage(player));
+            return;
         }
+
+        if (!PermissionHelper.getPermissionHelper().hasPermission(player.getUniqueId(), player.getLocation(), PermissionRoute.MODIFY_PERMISSIONS)){
+            player.sendMessage(Localization.EJECT__NO_PERMISSION.getMessage(player));
+            return;
+        }
+
+        Location otherLocation = otherPlayer.getLocation();
+        Claim otherClaim = manager.getClaim(otherLocation.getBlockX(), otherLocation.getBlockZ(), otherLocation.getWorld().getUID());
+
+        if (!claim.equals(otherClaim)){
+            player.sendMessage(Localization.EJECT__NOT_SAME_CLAIM.getMessage(player));
+            return;
+        }
+
+        if (PermissionHelper.getPermissionHelper().hasPermission(otherPlayer.getUniqueId(), otherPlayer.getLocation(), PermissionRoute.MODIFY_PERMISSIONS)){
+            player.sendMessage(Localization.EJECT__HAS_PERMISSION.getMessage(player));
+            return;
+        }
+
+        if (GlobalConfig.useCommandInsteadOfEdgeEject){
+            otherPlayer.performCommand(GlobalConfig.claimEjectCommand);
+        } else {
+            int distMax = Math.abs(location.getBlockX() - claim.getMaxX());
+            int distMin = Math.abs(location.getBlockX() - claim.getMinX());
+
+            World world = location.getWorld();
+            if (distMax > distMin) {    //Find closest side
+                PaperLib.teleportAsync(otherPlayer, new Location(world, claim.getMinX() - 1,
+                        world.getHighestBlockYAt(claim.getMinX() - 1,
+                                location.getBlockZ()), location.getBlockZ()));
+            } else {
+                PaperLib.teleportAsync(otherPlayer, new Location(world, claim.getMaxX() + 1,
+                        world.getHighestBlockYAt(claim.getMaxX() + 1,
+                                location.getBlockZ()), location.getBlockZ()));
+            }
+        }
+
+        otherPlayer.sendMessage(Localization.EJECT__BEEN_EJECTED.getMessage(otherPlayer));
+        player.sendMessage(Localization.EJECT__SUCCESS.getMessage(player));
     }
 }
