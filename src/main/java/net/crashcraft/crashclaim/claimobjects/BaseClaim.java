@@ -192,10 +192,12 @@ public abstract class BaseClaim {
 
     public void ban(UUID player){
         bannedPlayers.add(player);
+        setToSave(true);
     }
 
     public void unban(UUID player){
         bannedPlayers.remove(player);
+        setToSave(true);
     }
 
     public void ban(Player player){
