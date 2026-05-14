@@ -30,8 +30,8 @@ repositories {
 }
 dependencies {
     // Custom Utils
-     implementation("com.github.CrashCraftNetwork:CrashUtils:master-SNAPSHOT")
-     compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
+    implementation("com.github.CrashCraftNetwork:CrashUtils:master-SNAPSHOT")
+    compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
     compileOnly("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
@@ -59,14 +59,20 @@ dependencies {
     compileOnly("com.google.guava:guava:31.1-jre")
 
     compileOnly("com.comphenix.protocol:ProtocolLib:5.4.0-SNAPSHOT")
-    compileOnly( "net.milkbowl.vault:VaultAPI:1.7"){
+    compileOnly("net.milkbowl.vault:VaultAPI:1.7") {
         exclude(group = "org.bukkit", module = "bukkit")
     }
-    compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.14")
-    compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")
-    compileOnly("com.ghostchu:quickshop-bukkit:6.1.0.0-SNAPSHOT")
-    compileOnly("com.ghostchu:quickshop-common:6.1.0.0-SNAPSHOT")
-    compileOnly("com.ghostchu:quickshop-api:6.1.0.0-SNAPSHOT")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14")
+    compileOnly("com.github.TechFortress:GriefPrevention:16.18.7")
+    compileOnly("com.ghostchu:quickshop-bukkit:6.2.0.11") {
+        exclude(group = "com.google.code.gson", module = "gson")
+    }
+    compileOnly("com.ghostchu:quickshop-common:6.2.0.11") {
+        exclude(group = "com.google.code.gson", module = "gson")
+    }
+    compileOnly("com.ghostchu:quickshop-api:6.2.0.11") {
+        exclude(group = "com.google.code.gson", module = "gson")
+    }
     compileOnly("me.clip:placeholderapi:2.11.5")
     compileOnly("us.dynmap:dynmap-api:3.2-SNAPSHOT") {
         exclude(group = "org.bukkit", module = "bukkit")
@@ -94,7 +100,10 @@ tasks {
         relocate("org.cache2k.IntCache", "net.crashcraft.crashclaim.cache2k")
         relocate("com.zaxxer.hikari", "net.crashcraft.crashclaim.hikari")
         relocate("com.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.api")
-        relocate("io.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.plugin")
+        relocate(
+            "io.github.retrooper.packetevents",
+            "net.crashcraft.crashclaim.packetevents.plugin"
+        )
     }
 
     register<Copy>("buildToServer") {

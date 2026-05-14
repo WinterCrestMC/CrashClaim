@@ -17,6 +17,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
+import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.*;
@@ -26,11 +27,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFertilizeEvent;
+import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
@@ -204,9 +207,46 @@ public class PlayerListener implements Listener {
         }
     }
 
+    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onBlockFormEvent(BlockFormEvent event) {
+        if (GlobalConfig.disabled_worlds.contains(event.getBlock().getWorld().getUID())){
+            return;
+        }
+
+        Material formedType = event.getNewState().getType();
+
+        if (formedType != Material.COBBLESTONE && formedType != Material.STONE && formedType != Material.OBSIDIAN){
+            return;
+        }
+
+        Block formedBlock = event.getBlock();
+
+        for (BlockFace face : new BlockFace[]{
+                BlockFace.NORTH,
+                BlockFace.EAST,
+                BlockFace.SOUTH,
+                BlockFace.WEST,
+                BlockFace.UP,
+                BlockFace.DOWN
+        }) {
+            Block relative = formedBlock.getRelative(face);
+
+            if (isLiquidSource(relative) && checkToCancelFluid(relative, formedBlock)){
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
     private boolean isFullOfLiquid(Block block){
         return block.isLiquid()
                 || (block.getBlockData() instanceof Waterlogged && ((Waterlogged) block.getBlockData()).isWaterlogged());
+    }
+
+    private boolean isLiquidSource(Block block){
+        return block.isLiquid()
+                && block.getBlockData() instanceof Levelled levelled
+                && levelled.getLevel() == 0;
     }
 
     @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)

@@ -1,7 +1,7 @@
 package net.crashcraft.crashclaim.listeners;
 
-import com.ghostchu.quickshop.api.event.ProtectionCheckStatus;
-import com.ghostchu.quickshop.api.event.ShopProtectionCheckEvent;
+import com.ghostchu.quickshop.api.event.general.ProtectionCheckStatus;
+import com.ghostchu.quickshop.api.event.general.ShopProtectionCheckEvent;
 import com.google.common.collect.Sets;
 import java.util.Collection;
 import org.bukkit.event.Event;
