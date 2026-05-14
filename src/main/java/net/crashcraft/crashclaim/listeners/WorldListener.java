@@ -67,10 +67,6 @@ public class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onStructureGrowEvent(StructureGrowEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getWorld().getUID())) {
-            return;
-        }
-
         ArrayList<BlockState> removeAlBlocks = new ArrayList<>();
         if (e.getPlayer() != null) {
             UUID uuid = e.getPlayer().getUniqueId();
@@ -127,10 +123,6 @@ public class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onProjectileHitEvent(EntityInteractEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
-            return;
-        }
-
         if (QuickShopListener.isExempt(e)) {
             return;
         }
@@ -165,9 +157,6 @@ public class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityChangeBlockEvent(EntityChangeBlockEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
-            return;
-        }
 
         Location location = e.getBlock().getLocation();
 
@@ -224,19 +213,11 @@ public class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBlockExplodeEvent(BlockExplodeEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getBlock().getWorld().getUID())) {
-            return;
-        }
-
         e.blockList().removeAll(processExplosion(e.blockList()));
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBlockExplodeEvent(EntityExplodeEvent e) {
-        if (GlobalConfig.disabled_worlds.contains(e.getLocation().getWorld().getUID())) {
-            return;
-        }
-
         e.blockList().removeAll(processExplosion(e.blockList()));
     }
 
@@ -245,10 +226,6 @@ public class WorldListener implements Listener {
         Block block = e.getClickedBlock();
 
         if (block == null) {
-            return;
-        }
-
-        if (GlobalConfig.disabled_worlds.contains(block.getWorld().getUID())) {
             return;
         }
 

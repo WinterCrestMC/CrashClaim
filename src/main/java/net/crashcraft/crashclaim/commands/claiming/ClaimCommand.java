@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class ClaimCommand extends BaseCommand implements Listener {
+    private static final String BYPASS_PERMISSION = "crashclaim.admin";
     private final ClaimDataManager dataManager;
     private final VisualizationManager visualizationManager;
     private final HashMap<UUID, ClickState> modeMap;
@@ -55,7 +56,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
     public void claim(Player player){
         UUID uuid = player.getUniqueId();
 
-        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
             player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
             forceCleanup(uuid, true);
             return;
@@ -80,7 +81,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
     public void subClaim(Player player){
         UUID uuid = player.getUniqueId();
 
-        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
             player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
             forceCleanup(uuid, true);
             return;
@@ -137,7 +138,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
         UUID uuid = player.getUniqueId();
 
         if (stateMap.containsKey(uuid)){
-            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
                 player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
                 forceCleanup(player.getUniqueId(), true);
                 return;
@@ -148,7 +149,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
         }
 
         if (modeMap.containsKey(uuid)){
-            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
                 player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
                 forceCleanup(player.getUniqueId(), true);
                 return;

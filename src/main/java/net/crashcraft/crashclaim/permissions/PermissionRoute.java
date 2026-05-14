@@ -90,7 +90,7 @@ public enum  PermissionRoute {
         @Override
         public int getPerm(PlayerPermissionSet set) {
             if (set == null)
-                return -1;
+                return PermState.NEUTRAL;
             return set.getPvp();
         }
         @Override
