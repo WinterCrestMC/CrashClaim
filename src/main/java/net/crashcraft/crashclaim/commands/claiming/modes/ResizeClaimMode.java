@@ -39,6 +39,10 @@ public class ResizeClaimMode implements ClaimMode {
     }
 
     private void firstClick(){
+        if (firstLocation == null){
+            player.sendMessage(Localization.RESIZE__INSTRUCTIONS.getMessage(player));
+            return;
+        }
         if (StaticClaimLogic.isClaimBorder(claim.getMinX(), claim.getMaxX(), claim.getMinZ(),
                 claim.getMaxZ(), firstLocation.getBlockX(), firstLocation.getBlockZ())){
             if (PermissionHelper.getPermissionHelper().hasPermission(claim, player.getUniqueId(), PermissionRoute.MODIFY_CLAIM)){

@@ -51,7 +51,7 @@ public class PlayerPermListMenu {
             throw new RuntimeException("Claim was not of known type.");
         }
 
-        new SearchablePlayerListMenu(LegacyComponentSerializer.legacySection().serialize(Localization.MENU__LIST_PLAYERS__TITLE.getMessage(null)), viewer, previous, uuids, (gui, uuid) -> {
+        new SearchablePlayerListMenu(Localization.MENU__LIST_PLAYERS__TITLE.getMessage(null), viewer, previous, uuids, (gui, uuid) -> {
             new SimplePermissionMenu(viewer, claim, uuid, gui).open();
             return "";
         }).open();

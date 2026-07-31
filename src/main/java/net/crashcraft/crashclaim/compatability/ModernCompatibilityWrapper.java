@@ -43,7 +43,7 @@ public class ModernCompatibilityWrapper implements CompatabilityWrapper {
 
         WrapperPlayServerEntityMetadata metadata = new WrapperPlayServerEntityMetadata(id, List.of(
             new EntityData(0, EntityDataTypes.BYTE, (byte) (0x20 | 0x40)), // Glowing Invisible
-            new EntityData(16, EntityDataTypes.INT, 2) //Slime size : 12
+            new EntityData(18, EntityDataTypes.INT, 2) //Slime size : 12
         ));
 
         sendPacket(player, packet);

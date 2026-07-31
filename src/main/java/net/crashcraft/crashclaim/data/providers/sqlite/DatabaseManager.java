@@ -80,6 +80,7 @@ public class DatabaseManager {
         registerDataVersion(new DataRev5());
         registerDataVersion(new DataRev6());
         registerDataVersion(new DataRev7());
+        registerDataVersion(new DataRev8());
     }
 
     private void validateDataVersions(){

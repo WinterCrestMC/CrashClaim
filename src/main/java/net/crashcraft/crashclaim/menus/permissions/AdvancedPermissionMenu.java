@@ -29,7 +29,7 @@ public class AdvancedPermissionMenu extends MenuListHelper {
 
     public AdvancedPermissionMenu(Player player, BaseClaim claim, UUID uuid, GUI prevMenu) {
         super(player,
-                LegacyComponentSerializer.legacySection().serialize(claim instanceof SubClaim ?
+                (claim instanceof SubClaim ?
                     Localization.MENU__SUB_CLAIM_ADVANCED_PERMISSIONS__TITLE.getMessage(null) : Localization.MENU__ADVANCED_PERMISSIONS__TITLE.getMessage(null)
                 ),
                 54, prevMenu);
@@ -65,6 +65,7 @@ public class AdvancedPermissionMenu extends MenuListHelper {
                     menuList.put(PermissionRoute.EXPLOSIONS, type);
                 }
                 menuList.put(PermissionRoute.TELEPORTATION, type);
+                menuList.put(PermissionRoute.WARPS, type);
 
                 if (claim instanceof SubClaim){
                     menuList.put(PermissionRoute.MODIFY_PERMISSIONS, type);

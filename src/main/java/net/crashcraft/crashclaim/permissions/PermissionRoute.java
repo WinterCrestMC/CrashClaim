@@ -90,7 +90,7 @@ public enum  PermissionRoute {
         @Override
         public int getPerm(PlayerPermissionSet set) {
             if (set == null)
-                return -1;
+                return PermState.NEUTRAL;
             return set.getPvp();
         }
         @Override
@@ -106,6 +106,28 @@ public enum  PermissionRoute {
         @Override
         public void setPerm(GlobalPermissionSet set, int value) {
             set.setPvp(value);
+        }
+    },
+    WARPS{
+        @Override
+        public int getPerm(PlayerPermissionSet set) {
+            if (set == null)
+                return PermState.NEUTRAL;
+            return set.getWarps();
+        }
+        @Override
+        public void setPerm(PlayerPermissionSet set, int value) {
+            set.setWarps(value);
+        }
+        @Override
+        public int getPerm(GlobalPermissionSet set) {
+            if (set == null)
+                return -1;
+            return set.getWarps();
+        }
+        @Override
+        public void setPerm(GlobalPermissionSet set, int value) {
+            set.setWarps(value);
         }
     },
     EXPLOSIONS{

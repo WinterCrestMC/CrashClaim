@@ -7,13 +7,10 @@ import net.crashcraft.crashclaim.config.ConfigManager;
 import net.crashcraft.crashclaim.config.GlobalConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.format.TextDecoration.State;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
-import net.kyori.adventure.text.serializer.craftbukkit.BukkitComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.enchantments.Enchantment;
@@ -210,6 +207,7 @@ public enum Localization {
     SUBCLAIM__ALREADY_RESIZING("<red>The claim your are attempting to resize is already being resized."),
 
     RESIZE__CLICK_ANOTHER_LOCATION("<green>Click another location to resize the claim."),
+    RESIZE__DISABLED("<red>Resize mode disabled."),
     RESIZE__NO_PERMISSION("<red>You do not have permission to modify this claim."),
     RESIZE__INSTRUCTIONS("<red>You need to click the border of the claim to resize it. Grabbing an edge will move it in that direction, grabbing a corner will move it in both directions relative to the corner."),
     RESIZE__SUCCESS("<green>Claim successfully resized"),
@@ -319,6 +317,13 @@ public enum Localization {
     MENU__PERMISSIONS__BUTTONS__RENAME_DISABLED(Material.ANVIL, 1,
             "<gray>Rename Claim",
             "<dark_gray>Rename your claim to easily identify it"),
+
+    MENU__PERMISSIONS__BUTTONS__RESIZE(Material.GOLDEN_HOE, 1,
+            "<gold>Toggle Resize Mode",
+            "<green>Click to toggle resize mode for this claim"),
+    MENU__PERMISSIONS__BUTTONS__RESIZE_DISABLED(Material.GOLDEN_HOE, 1,
+            "<gray>Toggle Resize Mode",
+            "<dark_gray>Click to toggle resize mode for this claim"),
 
     MENU__PERMISSIONS__BUTTONS__EDIT_ENTRY(Material.ANVIL, 1,
             "<gold>Edit Entry Message",
@@ -435,6 +440,10 @@ public enum Localization {
     MENU__PERMISSIONS__PVP(Material.DIAMOND_SWORD, 1,
             "<gold>PvP",
             "<green>Allows players to fight in the claim"),
+    MENU__PERMISSIONS__WARPS(Material.END_PORTAL_FRAME, 1,
+            "<gold>Warps",
+            "<green>Allow players to create warps",
+            "<green>inside of the claim."),
 
     // Menu buttons
 
@@ -776,7 +785,8 @@ public enum Localization {
             ItemMeta iMeta = item.getItemMeta();
 
             String newTitle = hasPlaceholders ? LocalizationLoader.placeholderManager.usePlaceholders(player, title) : title;
-            iMeta.setDisplayName(BukkitComponentSerializer.legacy().serialize(Component.empty().decoration(TextDecoration.ITALIC, false).append(LocalizationLoader.parser.deserialize(newTitle, generateTagResolver(replace)))));
+            iMeta.displayName(LocalizationLoader.parser.deserialize(newTitle, generateTagResolver(replace)).decorationIfAbsent(TextDecoration.ITALIC, State.FALSE));
+            // iMeta.setDisplayName(LegacyComponentSerializer.legacyAmpersand().serialize((Component.empty().decoration(TextDecoration.ITALIC, false).append(LocalizationLoader.parser.deserialize(newTitle, generateTagResolver(replace)))));
 
             if (PaperLib.isPaper()){
                 List<Component> components = new ArrayList<>(lore.size());

@@ -27,9 +27,9 @@ public class SimplePermissionMenu extends MenuListHelper {
 
     public SimplePermissionMenu(Player player, BaseClaim claim, UUID uuid, GUI prevMenu) {
         super(player,
-                LegacyComponentSerializer.legacySection().serialize(claim instanceof SubClaim ?
+                claim instanceof SubClaim ?
                         Localization.MENU__SUB_CLAIM_SIMPLE_PERMISSIONS__TITLE.getMessage(null) : Localization.MENU__SIMPLE_PERMISSIONS__TITLE.getMessage(null)
-                ), 54, prevMenu);
+                , 54, prevMenu);
 
         this.uuid = uuid;
         this.claim = claim;
@@ -49,6 +49,7 @@ public class SimplePermissionMenu extends MenuListHelper {
         menuList.put(PermissionRoute.CONTAINERS, type);
         menuList.put(PermissionRoute.ENTITIES, type);
         menuList.put(PermissionRoute.INTERACTIONS, type);
+        menuList.put(PermissionRoute.WARPS, type);
         menuList.put(PermissionRoute.PVP, type);
 
         if (isPlayerPermission){

@@ -26,7 +26,7 @@ public class SubClaimListMenu extends GUI {
     private ArrayList<SubClaim> claims;
 
     public SubClaimListMenu(Player player, GUI previousMenu, Claim claim) {
-        super(player, LegacyComponentSerializer.legacySection().serialize(Localization.MENU__SUB_CLAIM_LIST__TITLE.getMessage(null)), 54);
+        super(player, Localization.MENU__SUB_CLAIM_LIST__TITLE.getMessage(null), 54);
         this.previousMenu = previousMenu;
         this.claim = claim;
         this.pageItemsDisplay = new HashMap<>();

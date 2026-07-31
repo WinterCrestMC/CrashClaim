@@ -5,6 +5,7 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.taskchain.TaskChain;
 import net.crashcraft.crashclaim.CrashClaim;
+import net.crashcraft.crashclaim.claimobjects.BaseClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.SubClaim;
 import net.crashcraft.crashclaim.commands.claiming.modes.NewClaimMode;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class ClaimCommand extends BaseCommand implements Listener {
+    private static final String BYPASS_PERMISSION = "crashclaim.admin";
     private final ClaimDataManager dataManager;
     private final VisualizationManager visualizationManager;
     private final HashMap<UUID, ClickState> modeMap;
@@ -55,7 +57,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
     public void claim(Player player){
         UUID uuid = player.getUniqueId();
 
-        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
             player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
             forceCleanup(uuid, true);
             return;
@@ -80,7 +82,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
     public void subClaim(Player player){
         UUID uuid = player.getUniqueId();
 
-        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+        if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
             player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
             forceCleanup(uuid, true);
             return;
@@ -137,7 +139,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
         UUID uuid = player.getUniqueId();
 
         if (stateMap.containsKey(uuid)){
-            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
                 player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
                 forceCleanup(player.getUniqueId(), true);
                 return;
@@ -148,7 +150,7 @@ public class ClaimCommand extends BaseCommand implements Listener {
         }
 
         if (modeMap.containsKey(uuid)){
-            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID())){
+            if (GlobalConfig.disabled_worlds.contains(player.getWorld().getUID()) && !player.hasPermission(BYPASS_PERMISSION)){
                 player.sendMessage(Localization.DISABLED_WORLD.getMessage(player));
                 forceCleanup(player.getUniqueId(), true);
                 return;
@@ -232,6 +234,28 @@ public class ClaimCommand extends BaseCommand implements Listener {
                 group.removeAllVisuals();
             }
         }
+    }
+
+    public void startResizing(Player player, BaseClaim claim) {
+        UUID uuid = player.getUniqueId();
+        if (stateMap.containsKey(uuid)) {
+            forceCleanup(uuid, true);
+            player.sendMessage(Localization.RESIZE__DISABLED.getMessage(player));
+        } else {
+            if (claim.isEditing()){
+                player.sendMessage(Localization.SUBCLAIM__ALREADY_RESIZING.getMessage(player));
+                return;
+            }
+            if (claim instanceof SubClaim) {
+                stateMap.put(uuid, new ResizeSubClaimMode(this, player, ((SubClaim) claim).getParent(), (SubClaim) claim, null));
+            } else {
+                stateMap.put(uuid, new ResizeClaimMode(this, player, (Claim) claim, null));
+            }
+        }
+    }
+
+    public boolean isResizing(Player player) {
+        return stateMap.get(player.getUniqueId()) instanceof ResizeClaimMode;
     }
 
     public ClaimDataManager getDataManager() {

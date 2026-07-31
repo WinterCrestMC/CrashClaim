@@ -43,6 +43,10 @@ public class ResizeSubClaimMode implements ClaimMode {
     }
 
     private void firstClick(){
+        if (firstLocation == null){
+            player.sendMessage(Localization.RESIZE_SUBCLAIM__INSTRUCTIONS.getMessage(player));
+            return;
+        }
         if (!StaticClaimLogic.isClaimBorder(subClaim.getMinX(), subClaim.getMaxX(), subClaim.getMinZ(), subClaim.getMaxZ(),
                 firstLocation.getBlockX(), firstLocation.getBlockZ())){
             firstLocation = null;

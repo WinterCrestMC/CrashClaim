@@ -15,6 +15,7 @@ import java.util.ArrayList;
 public class CommandManager {
     private final PaperCommandManager commandManager;
     private final CrashClaim plugin;
+    private ClaimCommand claimCommand;
 
     public CommandManager(CrashClaim plugin) {
         this.plugin = plugin;
@@ -33,7 +34,8 @@ public class CommandManager {
         commandManager.registerCommand(new ShowClaimsCommand(visualizationManager, manager));
         commandManager.registerCommand(new HideClaimsCommand(visualizationManager));
 
-        commandManager.registerCommand(new ClaimCommand(manager, visualizationManager));
+        this.claimCommand = new ClaimCommand(manager, visualizationManager);
+        commandManager.registerCommand(this.claimCommand);
         commandManager.registerCommand(new UnClaimCommand(manager, visualizationManager));
 
         commandManager.registerCommand(new BanCommand(manager));
@@ -60,5 +62,9 @@ public class CommandManager {
 
     public PaperCommandManager getCommandManager() {
         return commandManager;
+    }
+
+    public ClaimCommand getClaimCommand() {
+        return claimCommand;
     }
 }

@@ -63,7 +63,7 @@ public class MenuCommand extends BaseCommand {
             message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
             new ConfirmationMenu(player,
-                    asBungee(Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
+                    Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
                     message,
                     Localization.UN_SUBCLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_SUBCLAIM__MENU__CONFIRMATION__DENY.getItem(player),
@@ -90,9 +90,5 @@ public class MenuCommand extends BaseCommand {
         } else {
             player.sendMessage(Localization.UN_SUBCLAIM__MENU__NO_CLAIM.getMessage(player));
         }
-    }
-
-    private BaseComponent[] asBungee(Component component){
-        return BungeeComponentSerializer.get().serialize(component);
     }
 }

@@ -45,7 +45,7 @@ public class UnClaimCommand extends BaseCommand {
             message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
             new ConfirmationMenu(player,
-                    asBungee(Localization.UN_CLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
+                    Localization.UN_CLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
                     message,
                     Localization.UN_CLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_CLAIM__MENU__CONFIRMATION__DENY.getItem(player),
@@ -84,7 +84,7 @@ public class UnClaimCommand extends BaseCommand {
 
         if (claims.size() > 0) {
             new ConfirmationMenu(player,
-                    asBungee(Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player)),
+                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__MESSAGE.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__ACCEPT.getItem(player),
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__DENY.getItem(player),
@@ -124,40 +124,37 @@ public class UnClaimCommand extends BaseCommand {
     public void unClaimAll(Player player, @Flags("other") OfflinePlayer otherPlayer){
         ArrayList<Claim> claims = manager.getOwnedParentClaims(otherPlayer.getUniqueId());
 
-        if (claims.size() > 0) {
-            new ConfirmationMenu(player,
-                    asBungee(Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player)),
-                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__MESSAGE.getItem(player),
-                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__ACCEPT.getItem(player),
-                    Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__DENY.getItem(player),
-                    (p, aBoolean) -> {
-                        if (aBoolean) {
-                            for (Claim claim : claims) {
-                                // Admin Command no need for permission checks
+        if (claims.isEmpty()) {
+            player.sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
+            return;
+        }
 
+        new ConfirmationMenu(player,
+                Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player),
+                Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__MESSAGE.getItem(player),
+                Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__ACCEPT.getItem(player),
+                Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__DENY.getItem(player),
+                (p, aBoolean) -> {
+                    if (aBoolean) {
+                        for (Claim claim : claims) {
+                            // Admin Command no need for permission checks
+
+                            CrashClaim.getPlugin().getDataManager().deleteClaim(claim);
+                            VisualGroup group = visualizationManager.fetchVisualGroup(player, false);
+                            if (group != null) {
+                                group.removeAllVisuals();
+                            }
+
+                            if (otherPlayer.isOnline()){
                                 CrashClaim.getPlugin().getDataManager().deleteClaim(claim);
-                                VisualGroup group = visualizationManager.fetchVisualGroup(player, false);
-                                if (group != null) {
-                                    group.removeAllVisuals();
-                                }
-
-                                if (otherPlayer.isOnline()){
-                                    CrashClaim.getPlugin().getDataManager().deleteClaim(claim);
-                                    VisualGroup group2 = visualizationManager.fetchVisualGroup(otherPlayer.getPlayer(), false);
-                                    if (group2 != null) {
-                                        group2.removeAllVisuals();
-                                    }
+                                VisualGroup group2 = visualizationManager.fetchVisualGroup(otherPlayer.getPlayer(), false);
+                                if (group2 != null) {
+                                    group2.removeAllVisuals();
                                 }
                             }
                         }
-                        return "";
-                    }, p -> "").open();
-        } else {
-            player.sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
-        }
-    }
-
-    private BaseComponent[] asBungee(Component component){
-        return BungeeComponentSerializer.get().serialize(component);
+                    }
+                    return "";
+                }, p -> "").open();
     }
 }

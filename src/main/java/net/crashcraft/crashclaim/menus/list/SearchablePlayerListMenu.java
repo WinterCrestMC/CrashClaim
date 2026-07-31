@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.localization.Localization;
+import net.kyori.adventure.text.Component;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -18,13 +19,13 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 
 public class SearchablePlayerListMenu extends PlayerListMenu {
 
-    private final String title;
+    private final Component title;
     private final GUI previousMenu;
     private final ArrayList<UUID> uuids;
     private final ArrayList<UUID> originalIds;
     private final BiFunction<GUI, UUID, String> function;
 
-    public SearchablePlayerListMenu(String title, Player player, GUI previousMenu, ArrayList<UUID> arrayList, BiFunction<GUI, UUID, String> function) {
+    public SearchablePlayerListMenu(Component title, Player player, GUI previousMenu, ArrayList<UUID> arrayList, BiFunction<GUI, UUID, String> function) {
         super(title, player, previousMenu, arrayList, function);
         this.title = title;
         this.previousMenu = previousMenu;
@@ -33,7 +34,7 @@ public class SearchablePlayerListMenu extends PlayerListMenu {
         this.function = function;
     }
 
-    private SearchablePlayerListMenu(String title, Player player, GUI previousMenu, ArrayList<UUID> arrayList, BiFunction<GUI, UUID, String> function, ArrayList<UUID> originalIds) {
+    private SearchablePlayerListMenu(Component title, Player player, GUI previousMenu, ArrayList<UUID> arrayList, BiFunction<GUI, UUID, String> function, ArrayList<UUID> originalIds) {
         super(title, player, previousMenu, arrayList, function);
         this.title = title;
         this.previousMenu = previousMenu;

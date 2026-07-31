@@ -30,7 +30,7 @@ public class SubClaimMenu extends GUI {
     private final PermissionHelper helper;
 
     public SubClaimMenu(Player player, SubClaim claim) {
-        super(player, LegacyComponentSerializer.legacySection().serialize(Localization.MENU__SUB_CLAIM__TITLE.getMessage(null)), 54);
+        super(player, Localization.MENU__SUB_CLAIM__TITLE.getMessage(null), 54);
         this.claim = claim;
         this.helper = PermissionHelper.getPermissionHelper();
         setupGUI();
@@ -78,11 +78,13 @@ public class SubClaimMenu extends GUI {
         }
 
         if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
+            inv.setItem(31, Localization.MENU__PERMISSIONS__BUTTONS__RESIZE.getItem(player));
             inv.setItem(32, Localization.MENU__PERMISSIONS__BUTTONS__RENAME.getItem(player));
             inv.setItem(33, Localization.MENU__PERMISSIONS__BUTTONS__EDIT_ENTRY.getItem(player));
             inv.setItem(34, Localization.MENU__PERMISSIONS__BUTTONS__EDIT_EXIT.getItem(player));
             inv.setItem(49, Localization.MENU__PERMISSIONS__BUTTONS__DELETE.getItem(player));
         } else {
+            inv.setItem(31, Localization.MENU__PERMISSIONS__BUTTONS__RESIZE_DISABLED.getItem(player));
             inv.setItem(32, Localization.MENU__PERMISSIONS__BUTTONS__RENAME_DISABLED.getItem(player));
             inv.setItem(33, Localization.MENU__PERMISSIONS__BUTTONS__EDIT_ENTRY_DISABLED.getItem(player));
             inv.setItem(34, Localization.MENU__PERMISSIONS__BUTTONS__EDIT_EXIT_DISABLED.getItem(player));
@@ -111,6 +113,15 @@ public class SubClaimMenu extends GUI {
             case 29:
                 if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_PERMISSIONS)) {
                     new SimplePermissionMenu(getPlayer(), claim, null, this).open();
+                } else {
+                    player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
+                    forceClose();
+                }
+                break;
+            case 31:
+                if (helper.hasPermission(claim, getPlayer().getUniqueId(), PermissionRoute.MODIFY_CLAIM)) {
+                    CrashClaim.getPlugin().getCommandManager().getClaimCommand().startResizing(player, claim);
+                    forceClose();
                 } else {
                     player.sendMessage(Localization.MENU__GENERAL__INSUFFICIENT_PERMISSION.getMessage(player));
                     forceClose();
@@ -170,7 +181,7 @@ public class SubClaimMenu extends GUI {
                     message.setType(GlobalConfig.visual_menu_items.getOrDefault(claim.getWorld(), Material.OAK_FENCE));
 
                     new ConfirmationMenu(player,
-                            asBungee(Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player)),
+                            Localization.UN_SUBCLAIM__MENU__CONFIRMATION__TITLE.getMessage(player),
                             message,
                             Localization.UN_SUBCLAIM__MENU__CONFIRMATION__ACCEPT.getItem(player),
                             Localization.UN_SUBCLAIM__MENU__CONFIRMATION__DENY.getItem(player),
@@ -194,9 +205,5 @@ public class SubClaimMenu extends GUI {
                 new SubClaimListMenu(getPlayer(), new ClaimMenu(getPlayer(), main, null), main).open();
                 break;
         }
-    }
-
-    private BaseComponent[] asBungee(Component component){
-        return BungeeComponentSerializer.get().serialize(component);
     }
 }

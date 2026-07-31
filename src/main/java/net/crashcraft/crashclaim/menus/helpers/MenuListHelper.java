@@ -12,6 +12,7 @@ import net.crashcraft.crashclaim.config.GlobalConfig;
 import net.crashcraft.crashclaim.localization.Localization;
 import net.crashcraft.crashclaim.permissions.PermissionHelper;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -49,7 +50,7 @@ public abstract class MenuListHelper extends GUI {
     protected ItemStack descItem;
     protected final GUI prevMenu;
 
-    public MenuListHelper(Player player, String title, int slots, GUI prevMenu) {
+    public MenuListHelper(Player player, Component title, int slots, GUI prevMenu) {
         super(player, title, slots);
 
         this.prevMenu = prevMenu;
@@ -361,6 +362,7 @@ public abstract class MenuListHelper extends GUI {
             case INTERACTIONS -> Localization.MENU__PERMISSIONS__INTERACTIONS.getItem(player);
             case MODIFY_CLAIM -> Localization.MENU__PERMISSIONS__MODIFY_CLAIM.getItem(player);
             case TELEPORTATION -> Localization.MENU__PERMISSIONS__TELEPORTATION.getItem(player);
+            case WARPS -> Localization.MENU__PERMISSIONS__WARPS.getItem(player);
             case VIEW_SUB_CLAIMS -> Localization.MENU__PERMISSIONS__VIEW_SUB_CLAIMS.getItem(player);
             case MODIFY_PERMISSIONS -> Localization.MENU__PERMISSIONS__MODIFY_PERMISSIONS.getItem(player);
             case SUBCLAIM_ADMIN -> Localization.MENU__PERMISSIONS__SUBCLAIM_ADMIN.getItem(player);

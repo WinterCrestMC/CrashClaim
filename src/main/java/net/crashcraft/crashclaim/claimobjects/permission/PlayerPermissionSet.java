@@ -12,8 +12,8 @@ public class PlayerPermissionSet extends PermissionSet implements Cloneable {
 
     }
 
-    public PlayerPermissionSet(int build, int interactions, int entities, int explosions, int teleportation, int viewSubClaims, HashMap<Material, Integer> containers, int defaultContainerValue, int modifyPermissions, int modifyClaim, int pvp) {
-        super(build, interactions, entities, teleportation, viewSubClaims, containers, defaultContainerValue, pvp);
+    public PlayerPermissionSet(int build, int interactions, int entities, int explosions, int teleportation, int viewSubClaims, HashMap<Material, Integer> containers, int defaultContainerValue, int modifyPermissions, int modifyClaim, int pvp, int warps) {
+        super(build, interactions, entities, teleportation, viewSubClaims, containers, defaultContainerValue, pvp, warps);
         this.modifyPermissions = modifyPermissions;
         this.modifyClaim = modifyClaim;
     }

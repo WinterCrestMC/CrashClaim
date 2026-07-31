@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("maven-publish")
-    id("com.gradleup.shadow") version "8.3.0"
+    id("com.gradleup.shadow") version "9.4.2"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
@@ -19,7 +19,7 @@ repositories {
     maven("https://maven.enginehub.org/repo/") //worldguard
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.mikeprimm.com/")
-    maven("https://nexus.wesjd.net/repository/thirdparty/")
+    maven("https://mvn.wesjd.net/")
     maven("https://repo.opencollab.dev/main/")
 
     maven {
@@ -28,23 +28,31 @@ repositories {
 
     mavenCentral()
 }
+
+configurations.all {
+    resolutionStrategy {
+        force("com.google.code.gson:gson:2.13.2")
+        force("it.unimi.dsi:fastutil:8.5.18")
+    }
+}
+
 dependencies {
     // Custom Utils
-     implementation("com.github.CrashCraftNetwork:CrashUtils:master-SNAPSHOT")
+     implementation("dev.whip:CrashUtils:1.6.2")
      compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
-    compileOnly("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 
     // Adventure
-    val adventure = "4.19.0"
-    implementation("net.kyori:adventure-api:${adventure}")
-    implementation("net.kyori:adventure-platform-bukkit:4.3.2")
-    implementation("net.kyori:adventure-text-minimessage:${adventure}")
+    // val adventure = "5.2.0"
+    // implementation("net.kyori:adventure-api:${adventure}")
+    // implementation("net.kyori:adventure-platform-bukkit:4.3.2")
+    // implementation("net.kyori:adventure-text-minimessage:${adventure}")
 
     // Other
     implementation("co.aikar:taskchain-bukkit:3.7.2")
-    implementation("net.wesjd:anvilgui:1.10.8-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.10.13-SNAPSHOT")
     implementation("co.aikar:fastutil-base:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longbase:3.0-SNAPSHOT")
     implementation("co.aikar:fastutil-longhashmap:3.0-SNAPSHOT")
@@ -54,16 +62,22 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.bstats:bstats-bukkit:3.0.1")
 
-    implementation("com.github.retrooper:packetevents-spigot:2.11.0")
+    implementation("com.github.retrooper:packetevents-spigot:2.13.0") {
+        exclude(group = "net.kyori")
+        exclude(group = "io.netty")
+    }
 
-    compileOnly("com.google.guava:guava:31.1-jre")
+    // compileOnly("com.google.guava:guava:31.1-jre")
 
     compileOnly("com.comphenix.protocol:ProtocolLib:5.4.0-SNAPSHOT")
     compileOnly( "net.milkbowl.vault:VaultAPI:1.7"){
         exclude(group = "org.bukkit", module = "bukkit")
     }
-    compileOnly( "com.sk89q.worldguard:worldguard-bukkit:7.0.14")
-    compileOnly( "com.github.TechFortress:GriefPrevention:16.16.0")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14") {
+        exclude(group = "com.google.guava")
+        exclude(group = "com.google.gson")
+    }
+    compileOnly( "com.github.TechFortress:GriefPrevention:16.18.7")
     compileOnly("com.ghostchu:quickshop-bukkit:6.1.0.0-SNAPSHOT")
     compileOnly("com.ghostchu:quickshop-common:6.1.0.0-SNAPSHOT")
     compileOnly("com.ghostchu:quickshop-api:6.1.0.0-SNAPSHOT")
@@ -78,6 +92,11 @@ dependencies {
 
     implementation("org.cache2k:cache2k-api:${cache2kVersion}")
     runtimeOnly("org.cache2k:cache2k-core:${cache2kVersion}")
+}
+
+configurations.all {
+    exclude(group = "org.cache2k", module = "cache2k-base-bom")
+    exclude(group = "org.cache2k", module = "cache2k-bom")
 }
 
 tasks {
@@ -95,6 +114,10 @@ tasks {
         relocate("com.zaxxer.hikari", "net.crashcraft.crashclaim.hikari")
         relocate("com.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.api")
         relocate("io.github.retrooper.packetevents", "net.crashcraft.crashclaim.packetevents.plugin")
+
+        exclude("net.kyori/**")
+        exclude("org/intellij/**")
+        exclude("org/jetbrains/**")
     }
 
     register<Copy>("buildToServer") {
@@ -109,7 +132,6 @@ tasks {
 
     compileJava {
         options.encoding = "UTF-8"
-        dependsOn(clean)
     }
 
     processResources {
@@ -120,7 +142,7 @@ tasks {
 group = "net.crashcraft"
 version = findProperty("version")!!
 description = "CrashClaim"
-java.sourceCompatibility = JavaVersion.VERSION_21
+java.sourceCompatibility = JavaVersion.VERSION_25
 
 publishing {
     publications {

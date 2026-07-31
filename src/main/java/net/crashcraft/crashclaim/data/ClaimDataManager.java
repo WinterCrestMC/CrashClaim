@@ -195,7 +195,7 @@ public class ClaimDataManager implements Listener {
                 String priceString = Integer.toString(price);
                 //Check price with player
                 new ConfirmationMenu(resizer,
-                    asBungee(Localization.RESIZE__MENU__CONFIRMATION__TITLE.getMessage(resizer)),
+                    Localization.RESIZE__MENU__CONFIRMATION__TITLE.getMessage(resizer),
                     Localization.RESIZE__MENU__CONFIRMATION__MESSAGE.getItem(resizer, "price", priceString),
                     Localization.RESIZE__MENU__CONFIRMATION__ACCEPT.getItem(resizer, "price", priceString),
                     Localization.RESIZE__MENU__CONFIRMATION__DENY.getItem(resizer, "price", priceString),

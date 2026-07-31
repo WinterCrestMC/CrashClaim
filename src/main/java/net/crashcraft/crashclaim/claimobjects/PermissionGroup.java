@@ -75,7 +75,7 @@ public abstract class PermissionGroup {
         owner.setToSave(true);
     }
 
-    public void setPlayerPermission(UUID uuid, PermissionRoute route, int value){
+    public void mission(UUID uuid, PermissionRoute route, int value){
         route.setPerm(getPlayerPermissionSet(uuid), checkPlayerValue(value, route));
         owner.setToSave(true);
         route.postSetPayload(this, route.getPerm(getPlayerPermissionSet(uuid)), uuid);
