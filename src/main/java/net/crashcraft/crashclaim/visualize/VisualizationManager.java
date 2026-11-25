@@ -1,6 +1,5 @@
 package net.crashcraft.crashclaim.visualize;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.SubClaim;
@@ -17,6 +16,7 @@ import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -115,38 +115,25 @@ public class VisualizationManager {
     }
 
     public void visualizeSurroundingClaims(Player player, ClaimDataManager claimDataManager){
-        long chunkx = player.getLocation().getChunk().getX();
-        long chunkz = player.getLocation().getChunk().getZ();
+        Location playerLocation = player.getLocation();
+        long chunkx = playerLocation.getChunk().getX();
+        long chunkz = playerLocation.getChunk().getZ();
 
-        Long2ObjectOpenHashMap<ArrayList<Integer>> chunks = claimDataManager.getClaimChunkMap(player.getWorld().getUID());
-
-        ArrayList<Integer> tempClaims = new ArrayList<>();
-
-        for (long x = chunkx - 6; x <= chunkx + 6; x++){
-            for (long z = chunkz + 6; z >= chunkz - 6; z--){
-                ArrayList<Integer> chu = chunks.get(StaticClaimLogic.getChunkHash(x, z));
-
-                if (chu == null) {
-                    continue;
-                }
-
-                for (Integer integer : chu){
-                    if (!tempClaims.contains(integer)) {
-                        tempClaims.add(integer);
-                    }
-                }
-            }
-        }
+        ArrayList<Integer> tempClaims = claimDataManager.getClaimIdsInChunkRange(
+                player.getWorld().getUID(), chunkx - 6, chunkx + 6, chunkz - 6, chunkz + 6);
 
         ArrayList<Claim> claims = new ArrayList<>();
         for (Integer integer : tempClaims){
-            claims.add(claimDataManager.getClaim(integer));
+            Claim claim = claimDataManager.getClaim(integer);
+            if (claim != null) {
+                claims.add(claim);
+            }
         }
 
         VisualGroup group = fetchVisualGroup(player, true);
         group.removeAllVisuals();
 
-        int y = player.getLocation().getBlockY() - 1;
+        int y = playerLocation.getBlockY() - 1;
 
         for (Claim claim : claims){
             BaseVisual visual = getProvider(player.getUniqueId()).spawnClaimVisual(null, group, claim, y);

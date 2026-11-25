@@ -34,7 +34,15 @@ public class PermissionHelper {
             return true;
         }
 
-        // Override owner to grant permissions
+        if (claim.isBanned(player)) {
+            return false;
+        }
+
+        if (claim instanceof Claim parentClaim && parentClaim.getOwner().equals(player)){
+            return true;
+        }
+
+        // Parent claim owners always control their sub-claims.
         if (claim instanceof SubClaim subClaim && subClaim.getParent().getOwner().equals(player)){
             return true;
         }
@@ -54,6 +62,10 @@ public class PermissionHelper {
     public Boolean hasPermission(BaseClaim claim, UUID player, Material material){
         if (bypassManager.isBypass(player)){
             return true;
+        }
+
+        if (claim.isBanned(player)) {
+            return false;
         }
 
         // Override owner to grant permissions

@@ -1,7 +1,7 @@
 package net.crashcraft.crashclaim.claimobjects;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.data.MathUtils;
 import net.crashcraft.crashclaim.localization.Localization;
@@ -33,7 +33,7 @@ public abstract class BaseClaim {
     private Component parsedExitMessage; // Cached for efficiency
 
     private boolean isEditing = false;
-    private boolean deleted = false;
+    private volatile LifecycleState lifecycleState = LifecycleState.ACTIVE;
 
     public BaseClaim(int id, int maxCornerX, int maxCornerZ, int minCornerX, int minCornerZ, UUID world, PermissionGroup perms, List<UUID> bannedPlayers) {
         this.id = id;
@@ -43,7 +43,7 @@ public abstract class BaseClaim {
         this.minCornerZ = minCornerZ;
         this.world = world;
         this.perms = perms;
-        this.bannedPlayers = bannedPlayers;
+        this.bannedPlayers = new ArrayList<>(bannedPlayers);
     }
 
     public void setToSave(boolean toSave){
@@ -171,11 +171,26 @@ public abstract class BaseClaim {
     }
 
     public boolean isDeleted() {
-        return deleted;
+        return lifecycleState != LifecycleState.ACTIVE;
     }
 
-    public void setDeleted() {
-        this.deleted = true;
+    public synchronized boolean beginDeletion() {
+        if (lifecycleState != LifecycleState.ACTIVE) {
+            return false;
+        }
+
+        lifecycleState = LifecycleState.DELETING;
+        return true;
+    }
+
+    public synchronized void completeDeletion() {
+        lifecycleState = LifecycleState.DELETED;
+    }
+
+    public synchronized void cancelDeletion() {
+        if (lifecycleState == LifecycleState.DELETING) {
+            lifecycleState = LifecycleState.ACTIVE;
+        }
     }
 
     public Component getParsedEntryMessage() {
@@ -186,16 +201,19 @@ public abstract class BaseClaim {
         return parsedExitMessage;
     }
 
-    public boolean isBanned(UUID player){
+    public synchronized boolean isBanned(UUID player){
         return bannedPlayers.contains(player);
     }
 
-    public void ban(UUID player){
-        bannedPlayers.add(player);
+    public synchronized void ban(UUID player){
+        if (!bannedPlayers.contains(player)) {
+            bannedPlayers.add(player);
+        }
+        perms.removePlayerPermissionSet(player);
         setToSave(true);
     }
 
-    public void unban(UUID player){
+    public synchronized void unban(UUID player){
         bannedPlayers.remove(player);
         setToSave(true);
     }
@@ -212,8 +230,14 @@ public abstract class BaseClaim {
         return isBanned(player.getUniqueId());
     }
 
-    public List<UUID> getBannedPlayers() {
-        return bannedPlayers;
+    public synchronized List<UUID> getBannedPlayers() {
+        return List.copyOf(bannedPlayers);
+    }
+
+    private enum LifecycleState {
+        ACTIVE,
+        DELETING,
+        DELETED
     }
 }
 

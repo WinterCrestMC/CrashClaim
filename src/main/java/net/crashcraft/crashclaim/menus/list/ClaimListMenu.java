@@ -1,6 +1,5 @@
 package net.crashcraft.crashclaim.menus.list;
 
-import co.aikar.taskchain.TaskChain;
 import dev.whip.crashutils.menusystem.GUI;
 import io.papermc.lib.PaperLib;
 import net.crashcraft.crashclaim.CrashClaim;
@@ -44,18 +43,18 @@ public class ClaimListMenu extends GUI {
     @Override
     public void initialize() {
         claims.clear();
+        ClaimDataManager manager = CrashClaim.getPlugin().getDataManager();
+        manager.getOwnedClaimsAsync(player.getUniqueId()).whenComplete((ownedClaims, throwable) ->
+                Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                    if (throwable != null) {
+                        CrashClaim.getPlugin().getLogger().severe("Unable to load claims for " + player.getUniqueId()
+                                + ": " + throwable.getMessage());
+                        return;
+                    }
 
-        TaskChain<?> chain = CrashClaim.newChain().async(() -> {
-            try {
-                ClaimDataManager manager = CrashClaim.getPlugin().getDataManager();
-                claims.addAll(manager.getOwnedClaims(player.getUniqueId()));
-            } catch (Exception ex){
-                ex.printStackTrace();
-            }
-        }).sync(this::loadItems);
-
-        chain.setErrorHandler((ex, task) -> ex.printStackTrace());
-        chain.execute();
+                    claims.addAll(ownedClaims);
+                    loadItems();
+                }));
     }
 
     @Override

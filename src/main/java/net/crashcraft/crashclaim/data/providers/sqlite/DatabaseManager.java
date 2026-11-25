@@ -33,13 +33,37 @@ public class DatabaseManager {
         }
 
         updateDatabase();
+        enableAndVerifyForeignKeys();
+        verifyForeignKeyIntegrity();
     }
 
     private void setInitialParams(){
+        enableAndVerifyForeignKeys();
+    }
+
+    private void enableAndVerifyForeignKeys() {
         try {
             DB.executeUpdate("PRAGMA foreign_keys=ON");
+            Integer foreignKeysEnabled = DB.getFirstColumn("PRAGMA foreign_keys");
+            if (foreignKeysEnabled != null && foreignKeysEnabled == 1) {
+                return;
+            }
+
+            plugin.disablePlugin("SQLite foreign key support could not be enabled; it is unsafe to continue.");
         } catch (SQLException e){
-            plugin.disablePlugin("There was an error enabling SQlite foreign keys support, it is unsafe to continue.");
+            plugin.disablePlugin("There was an error enabling SQLite foreign key support; it is unsafe to continue.");
+        }
+    }
+
+    private void verifyForeignKeyIntegrity() {
+        try {
+            if (DB.getResults("PRAGMA foreign_key_check").isEmpty()) {
+                return;
+            }
+
+            plugin.disablePlugin("SQLite foreign key violations remain after migration; it is unsafe to continue.");
+        } catch (SQLException e) {
+            plugin.disablePlugin("There was an error validating SQLite foreign key integrity; it is unsafe to continue.");
         }
     }
 
@@ -60,6 +84,7 @@ public class DatabaseManager {
             } catch (SQLException e){
                 e.printStackTrace();
                 plugin.disablePlugin("Failed conversion, disabling plugin, manual data fixing may be needed");
+                return;
             }
 
             try {
@@ -81,6 +106,7 @@ public class DatabaseManager {
         registerDataVersion(new DataRev6());
         registerDataVersion(new DataRev7());
         registerDataVersion(new DataRev8());
+        registerDataVersion(new DataRev9());
     }
 
     private void validateDataVersions(){

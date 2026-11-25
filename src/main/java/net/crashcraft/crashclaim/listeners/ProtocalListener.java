@@ -36,11 +36,15 @@ public class ProtocalListener implements PacketListener {
 
         WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
 
-        if (wrapper.getHand() != InteractionHand.MAIN_HAND) {
+        InteractAction action = wrapper.getAction();
+
+        if (action != InteractAction.ATTACK && wrapper.getHand() != InteractionHand.MAIN_HAND) {
             return;
         }
 
-        if (wrapper.getAction() != InteractAction.INTERACT) {
+        if (action != InteractAction.INTERACT
+                && action != InteractAction.INTERACT_AT
+                && action != InteractAction.ATTACK) {
             return;
         }
 

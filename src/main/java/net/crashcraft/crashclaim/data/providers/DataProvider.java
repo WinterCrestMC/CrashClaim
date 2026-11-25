@@ -17,13 +17,13 @@ public interface DataProvider extends Listener {
     /**
      * Saves and updates a claims data
      */
-    void saveClaim(Claim claim);
+    boolean saveClaim(Claim claim);
 
     /**
      * Removes a claim and all data
      * To remove a subClaim, remove the claim in memory and then save
      */
-    void removeClaim(Claim claim);
+    boolean removeClaim(Claim claim);
 
     /**
      *  Loads a claim into memory from the datasource
@@ -40,6 +40,8 @@ public interface DataProvider extends Listener {
      * @return a list of owned claims
      */
     Set<Integer> getOwnedParentClaims(UUID uuid);
+
+    void saveWorld(UUID worldId, String worldName);
 
     /**
      * Update the last login time

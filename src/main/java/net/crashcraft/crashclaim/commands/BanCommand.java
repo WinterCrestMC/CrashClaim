@@ -61,7 +61,7 @@ public class BanCommand extends BaseCommand {
             return;
         }
 
-        if (PermissionHelper.getPermissionHelper().hasPermission(otherPlayer.getUniqueId(), player.getLocation(), PermissionRoute.MODIFY_PERMISSIONS)){
+        if (claim.getOwner().equals(otherPlayer.getUniqueId())){
             player.sendMessage(Localization.BAN__HAS_PERMISSION.getMessage(player));
             return;
         }
@@ -113,15 +113,13 @@ public class BanCommand extends BaseCommand {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(CrashClaim.getPlugin(), () -> {
-            List<UUID> bannedPlayers = claim.getBannedPlayers();
+        List<UUID> bannedPlayers = claim.getBannedPlayers();
 
-            player.sendMessage(Localization.BAN__LIST_HEADER.getMessage(player));
-            for (UUID bannedPlayer : bannedPlayers) {
-                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(bannedPlayer);
-                player.sendMessage(Localization.BAN__LIST_PLAYER.getMessage(player, "name", offlinePlayer.getName()));
-            }
-        });
+        player.sendMessage(Localization.BAN__LIST_HEADER.getMessage(player));
+        for (UUID bannedPlayer : bannedPlayers) {
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(bannedPlayer);
+            player.sendMessage(Localization.BAN__LIST_PLAYER.getMessage(player, "name", offlinePlayer.getName()));
+        }
 
     }
 

@@ -43,10 +43,10 @@ public class CrashClaimExpansion extends PlaceholderExpansion {
         if (offlinePlayer != null) {
             switch (params.toLowerCase()) {
                 case "total_owned_claims" -> {
-                    return Integer.toString(crashClaim.getDataManager().getNumberOwnedClaims(offlinePlayer.getUniqueId()));
+                    return Integer.toString(crashClaim.getDataManager().getCachedNumberOwnedClaims(offlinePlayer.getUniqueId()));
                 }
                 case "total_owned_parent_claims" -> {
-                    return Integer.toString(crashClaim.getDataManager().getNumberOwnedParentClaims(offlinePlayer.getUniqueId()));
+                    return Integer.toString(crashClaim.getDataManager().getCachedNumberOwnedParentClaims(offlinePlayer.getUniqueId()));
                 }
                 case "current_claim_owner" -> {
                     if (!offlinePlayer.isOnline()){

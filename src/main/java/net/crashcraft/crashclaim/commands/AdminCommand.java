@@ -119,7 +119,8 @@ public class AdminCommand extends BaseCommand {
             LocalizationUtils.sendMessageList(sender, Localization.MIGRATE__CONFIRM__START_MESSAGE.getMessageList(null,
                     "identifier", selectedAdaptor.getIdentifier()));
 
-            manager.migrate(selectedAdaptor).thenAccept((migrateError) -> {
+            manager.migrate(selectedAdaptor).thenAccept((migrateError) ->
+                    Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
                 if (migrateError != null){
                     LocalizationUtils.sendMessageList(sender, Localization.MIGRATE__CONFIRM__ERROR.getMessageList(null,
                             "error", migrateError));
@@ -128,7 +129,7 @@ public class AdminCommand extends BaseCommand {
 
                 LocalizationUtils.sendMessageList(sender, Localization.MIGRATE__CONFIRM__SUCCESS.getMessageList(null,
                         "identifier", selectedAdaptor.getIdentifier()));
-            });
+            }));
         }
 
         @Subcommand("cancel")

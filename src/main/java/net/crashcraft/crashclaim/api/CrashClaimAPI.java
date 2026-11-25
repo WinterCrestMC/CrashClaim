@@ -1,6 +1,5 @@
 package net.crashcraft.crashclaim.api;
 
-import co.aikar.taskchain.TaskChain;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.menus.list.ClaimListMenu;
@@ -36,18 +35,9 @@ public class CrashClaimAPI {
      */
     public CompletableFuture<Claim> getClaimAsync(Location location){
         if (location == null){
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
-
-        CompletableFuture<Claim> completableFuture = new CompletableFuture<>();
-
-        TaskChain<?> chain = CrashClaim.newChain();
-        chain.asyncFirst(() -> crashClaim.getDataManager().getClaim(location))
-                .syncLast(completableFuture::complete)
-                .setErrorHandler(((e, task) -> completableFuture.completeExceptionally(e)));
-        chain.execute();
-
-        return completableFuture;
+        return crashClaim.getDataManager().getClaimAsync(location);
     }
 
     /**
@@ -67,15 +57,7 @@ public class CrashClaimAPI {
      * @return the CompletableFuture of a claim
      */
     public CompletableFuture<Claim> getClaimAsync(int claimId){
-        CompletableFuture<Claim> completableFuture = new CompletableFuture<>();
-
-        TaskChain<?> chain = CrashClaim.newChain();
-        chain.asyncFirst(() -> crashClaim.getDataManager().getClaim(claimId))
-                .syncLast(completableFuture::complete)
-                .setErrorHandler(((e, task) -> completableFuture.completeExceptionally(e)));
-        chain.execute();
-
-        return completableFuture;
+        return crashClaim.getDataManager().getClaimAsync(claimId);
     }
 
     /**
@@ -95,15 +77,7 @@ public class CrashClaimAPI {
      * @return the CompletableFuture of an ArrayList of claims
      */
     public CompletableFuture<ArrayList<Claim>> getClaimsAsync(Player player){
-        CompletableFuture<ArrayList<Claim>> completableFuture = new CompletableFuture<>();
-
-        TaskChain<?> chain = CrashClaim.newChain();
-        chain.asyncFirst(() -> crashClaim.getDataManager().getOwnedClaims(player.getUniqueId()))
-                .syncLast(completableFuture::complete)
-                .setErrorHandler(((e, task) -> completableFuture.completeExceptionally(e)));
-        chain.execute();
-
-        return completableFuture;
+        return crashClaim.getDataManager().getOwnedClaimsAsync(player.getUniqueId());
     }
 
     /**
@@ -126,18 +100,9 @@ public class CrashClaimAPI {
      */
     public CompletableFuture<ArrayList<Claim>> getClaimsAsync(long chunkX, long chunkZ, UUID uuid){
         if (uuid == null){
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
-
-        CompletableFuture<ArrayList<Claim>> completableFuture = new CompletableFuture<>();
-
-        TaskChain<?> chain = CrashClaim.newChain();
-        chain.asyncFirst(() ->  crashClaim.getDataManager().getClaims(chunkX, chunkZ, uuid))
-                .syncLast(completableFuture::complete)
-                .setErrorHandler(((e, task) -> completableFuture.completeExceptionally(e)));
-        chain.execute();
-
-        return completableFuture;
+        return crashClaim.getDataManager().getClaimsAsync(chunkX, chunkZ, uuid);
     }
 
     /**

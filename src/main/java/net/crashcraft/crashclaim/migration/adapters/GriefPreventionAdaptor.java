@@ -54,6 +54,7 @@ public class GriefPreventionAdaptor implements MigrationAdapter {
 
         CompletableFuture<String> finishedFuture = new CompletableFuture<>();
         ArrayList<Claim> claims = new ArrayList<>(dataStore.getClaims());
+        pos = 0;
 
         task = Bukkit.getScheduler().runTaskTimer(CrashClaim.getPlugin(), () -> {
             int nextPos = Math.min(pos + 20, claims.size());
@@ -100,7 +101,7 @@ public class GriefPreventionAdaptor implements MigrationAdapter {
                 logger.info("Successfully migrated claim [" + claim.getID() + "]");
             }
 
-            pos = nextPos + 1;
+            pos = nextPos;
 
             if (nextPos >= claims.size()){
                 finishedFuture.complete(null);

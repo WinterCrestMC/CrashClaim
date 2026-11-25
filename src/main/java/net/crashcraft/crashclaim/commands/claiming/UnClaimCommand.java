@@ -16,6 +16,7 @@ import net.crashcraft.crashclaim.visualize.api.VisualGroup;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -80,8 +81,18 @@ public class UnClaimCommand extends BaseCommand {
     @CommandPermission("crashclaim.user.unclaimall")
     @CommandCompletion("@players")
     public void unClaimAll(Player player){
-        ArrayList<Claim> claims = manager.getOwnedParentClaims(player.getUniqueId());
+        manager.getOwnedParentClaimsAsync(player.getUniqueId())
+            .thenAccept(claims -> Bukkit.getScheduler().runTask(
+                CrashClaim.getPlugin(),
+                () -> openPlayerUnclaimAllMenu(player, claims)
+            ))
+            .exceptionally(throwable -> {
+                logAsyncFailure("load claims for " + player.getName(), throwable);
+                return null;
+            });
+    }
 
+    private void openPlayerUnclaimAllMenu(Player player, ArrayList<Claim> claims) {
         if (claims.size() > 0) {
             new ConfirmationMenu(player,
                     Localization.UN_CLAIM_ALL__MENU__CONFIRMATION__TITLE.getMessage(player),
@@ -122,8 +133,18 @@ public class UnClaimCommand extends BaseCommand {
     @Subcommand("all")
     @CommandPermission("crashclaim.admin.unclaimall")
     public void unClaimAll(Player player, @Flags("other") OfflinePlayer otherPlayer){
-        ArrayList<Claim> claims = manager.getOwnedParentClaims(otherPlayer.getUniqueId());
+        manager.getOwnedParentClaimsAsync(otherPlayer.getUniqueId())
+            .thenAccept(claims -> Bukkit.getScheduler().runTask(
+                CrashClaim.getPlugin(),
+                () -> openAdminUnclaimAllMenu(player, otherPlayer, claims)
+            ))
+            .exceptionally(throwable -> {
+                logAsyncFailure("load claims for " + otherPlayer.getUniqueId(), throwable);
+                return null;
+            });
+    }
 
+    private void openAdminUnclaimAllMenu(Player player, OfflinePlayer otherPlayer, ArrayList<Claim> claims) {
         if (claims.isEmpty()) {
             player.sendMessage(Localization.UN_CLAIM_ALL__NO_CLAIM.getMessage(player));
             return;
@@ -146,7 +167,6 @@ public class UnClaimCommand extends BaseCommand {
                             }
 
                             if (otherPlayer.isOnline()){
-                                CrashClaim.getPlugin().getDataManager().deleteClaim(claim);
                                 VisualGroup group2 = visualizationManager.fetchVisualGroup(otherPlayer.getPlayer(), false);
                                 if (group2 != null) {
                                     group2.removeAllVisuals();
@@ -156,5 +176,10 @@ public class UnClaimCommand extends BaseCommand {
                     }
                     return "";
                 }, p -> "").open();
+    }
+
+    private void logAsyncFailure(String action, Throwable throwable) {
+        CrashClaim.getPlugin().getLogger().severe("Failed to " + action);
+        throwable.printStackTrace();
     }
 }

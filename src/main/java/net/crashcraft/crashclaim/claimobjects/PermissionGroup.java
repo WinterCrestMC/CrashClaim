@@ -44,12 +44,12 @@ public abstract class PermissionGroup {
         return globalPermissionSet;
     }
 
-    public PlayerPermissionSet getPlayerPermissionSet(UUID id) {
+    public synchronized PlayerPermissionSet getPlayerPermissionSet(UUID id) {
         return playerPermissions.computeIfAbsent(id, key -> createPlayerPermissionSet());
     }
 
     //Used for fixing owner permissions only
-    public void setPlayerPermissionSet(UUID uuid, PlayerPermissionSet permissionSet, boolean save) {
+    public synchronized void setPlayerPermissionSet(UUID uuid, PlayerPermissionSet permissionSet, boolean save) {
         playerPermissions.put(uuid, permissionSet);
         if (save) {
             owner.setToSave(true);
@@ -57,8 +57,15 @@ public abstract class PermissionGroup {
         }
     }
 
-    public HashMap<UUID, PlayerPermissionSet> getPlayerPermissions(){
-        return playerPermissions;
+    public synchronized void removePlayerPermissionSet(UUID playerId) {
+        PlayerPermissionSet removedPermissionSet = playerPermissions.remove(playerId);
+        if (removedPermissionSet != null) {
+            owner.setToSave(true);
+        }
+    }
+
+    public synchronized HashMap<UUID, PlayerPermissionSet> getPlayerPermissions(){
+        return new HashMap<>(playerPermissions);
     }
 
     public void setOwner(BaseClaim owner, boolean save){
@@ -97,7 +104,7 @@ public abstract class PermissionGroup {
         this.globalPermissionSet = globalPermissionSet;
     }
 
-    public void setPlayerPermissions(HashMap<UUID, PlayerPermissionSet> playerPermissions) {
-        this.playerPermissions = playerPermissions;
+    public synchronized void setPlayerPermissions(HashMap<UUID, PlayerPermissionSet> playerPermissions) {
+        this.playerPermissions = new HashMap<>(playerPermissions);
     }
 }

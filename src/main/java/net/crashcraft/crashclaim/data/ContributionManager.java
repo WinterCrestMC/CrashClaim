@@ -41,17 +41,24 @@ public class ContributionManager {
     }
 
     private static void refund(Claim claim, int multiplier) {
-        for (Map.Entry<UUID, Integer> entry : claim.getContribution().entrySet()){
-            int value =  (int) Math.floor(Math.floor(multiplier *  GlobalConfig.getCostOfBlock(entry.getKey())) / claim.getContribution().size());
+        Map<UUID, Integer> contributions = claim.getContribution();
+        if (contributions.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<UUID, Integer> entry : contributions.entrySet()){
+            int value =  (int) Math.floor(Math.floor(multiplier * GlobalConfig.getCostOfBlock(entry.getKey())) / contributions.size());
             CrashClaim.getPlugin().getPayment().makeTransaction(entry.getKey(), TransactionType.DEPOSIT, "Claim Refund", value, (transaction) -> {
-                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(transaction.getOwner());
-                if (offlinePlayer.isOnline()){
-                    Player p = offlinePlayer.getPlayer();
-                    if (p != null) {
-                        p.sendMessage(Localization.CONTRIBUTION_REFUND.getMessage(p,
-                                "amount", Integer.toString((int) Math.floor(transaction.getAmount()))));
+                Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                    OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(transaction.getOwner());
+                    if (offlinePlayer.isOnline()){
+                        Player player = offlinePlayer.getPlayer();
+                        if (player != null) {
+                            player.sendMessage(Localization.CONTRIBUTION_REFUND.getMessage(player,
+                                    "amount", Integer.toString((int) Math.floor(transaction.getAmount()))));
+                        }
                     }
-                }
+                });
             });
         }
     }

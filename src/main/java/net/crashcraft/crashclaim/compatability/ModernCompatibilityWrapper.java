@@ -68,7 +68,7 @@ public class ModernCompatibilityWrapper implements CompatabilityWrapper {
 
     @Override
     public void setEntityTeam(Player player, String team, List<String> uuids) {
-        WrapperPlayServerTeams teams = new WrapperPlayServerTeams(team, TeamMode.UPDATE, (ScoreBoardTeamInfo) null, uuids);
+        WrapperPlayServerTeams teams = new WrapperPlayServerTeams(team, TeamMode.ADD_ENTITIES, (ScoreBoardTeamInfo) null, uuids);
         sendPacket(player, teams);
     }
 

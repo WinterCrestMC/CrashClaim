@@ -2,7 +2,7 @@ plugins {
     id("java")
     id("maven-publish")
     id("com.gradleup.shadow") version "9.4.2"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
 repositories {
@@ -38,11 +38,11 @@ configurations.all {
 
 dependencies {
     // Custom Utils
-     implementation("dev.whip:CrashUtils:1.6.2")
+     implementation("dev.whip:CrashUtils:1.6.3")
      compileOnly("com.github.Chasewhip8:CrashPayment:master-SNAPSHOT")
 
     // Paper
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.+")
 
     // Adventure
     // val adventure = "5.2.0"
@@ -62,10 +62,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.bstats:bstats-bukkit:3.0.1")
 
-    implementation("com.github.retrooper:packetevents-spigot:2.13.0") {
-        exclude(group = "net.kyori")
-        exclude(group = "io.netty")
-    }
+    implementation("com.github.retrooper:packetevents-spigot:2.14.0")
 
     // compileOnly("com.google.guava:guava:31.1-jre")
 
@@ -157,9 +154,9 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.runServer {
-    minecraftVersion("1.21.8")
+    minecraftVersion("26.3")
 
     downloadPlugins {
-        url("https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar")
+        // url("https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar")
     }
 }

@@ -37,4 +37,9 @@ public class SubClaim extends BaseClaim {
     public Claim getParent() {
         return parent;
     }
+
+    @Override
+    public boolean isBanned(UUID player) {
+        return parent.isBanned(player) || super.isBanned(player);
+    }
 }

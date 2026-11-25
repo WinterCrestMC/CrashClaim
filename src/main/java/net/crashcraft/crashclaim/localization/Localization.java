@@ -252,6 +252,7 @@ public enum Localization {
     ALERT__NO_PERMISSIONS__TELEPORT("<red>You do not have permission to teleport to that claim."),
     ALERT__NO_PERMISSIONS__TELEPORT_RELOCATE("<red>You do not have permission to teleport to that claim. You have been relocated outside of it."),
     ALERT__NO_PERMISSIONS__PVP("<red>You do not have permission to PvP in this claim."),
+    ALERT__NO_PERMISSIONS__SHOP_CREATE("<red>You do not have permission to create a shop in this claim."),
     // General Visuals
 
     MENU__GENERAL__INSUFFICIENT_PERMISSION("<red>You no longer have sufficient permissions to continue"),

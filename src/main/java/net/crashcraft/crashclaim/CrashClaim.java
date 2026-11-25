@@ -18,7 +18,7 @@ import net.crashcraft.crashclaim.data.ClaimDataManager;
 import net.crashcraft.crashclaim.data.MaterialName;
 import net.crashcraft.crashclaim.listeners.PaperListener;
 import net.crashcraft.crashclaim.listeners.PlayerListener;
-import net.crashcraft.crashclaim.listeners.QuickShopListener;
+import net.crashcraft.crashclaim.listeners.QuickShopHook;
 import net.crashcraft.crashclaim.listeners.WorldListener;
 import net.crashcraft.crashclaim.localization.LocalizationLoader;
 import net.crashcraft.crashclaim.migration.MigrationManager;
@@ -111,7 +111,7 @@ public class CrashClaim extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new WorldListener(manager, visualizationManager), this);
         Bukkit.getPluginManager().registerEvents(new PlayerListener(manager, visualizationManager), this);
-        Bukkit.getPluginManager().registerEvents(new QuickShopListener(), this);
+        QuickShopHook.register(this);
 
         if (PaperLib.isPaper()){
             getLogger().info("Using extra protections provided by the paper api");
@@ -145,8 +145,14 @@ public class CrashClaim extends JavaPlugin {
         Bukkit.getScheduler().cancelTasks(this); // Stop saving tasks
 
         if (dataLoaded) {
-            manager.saveClaimsSync(); // Do a force save to make sure all claims are saved as we just unregistered the save task
-            manager.cleanupAndClose(); // freezes claim saving and cleans up memory references to claims
+            try {
+                manager.saveClaimsSync(); // Do a force save to make sure all claims are saved as we just unregistered the save task
+            } catch (RuntimeException e) {
+                getLogger().severe("One or more claims could not be saved during shutdown.");
+                e.printStackTrace();
+            } finally {
+                manager.cleanupAndClose(); // freezes claim saving and cleans up memory references to claims
+            }
         }
 
         //Unregister all user facing things

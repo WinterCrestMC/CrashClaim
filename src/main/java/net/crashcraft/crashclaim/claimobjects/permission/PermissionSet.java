@@ -26,7 +26,7 @@ public abstract class PermissionSet implements Cloneable{
         this.entities = entities;
         this.teleportation = teleportation;
         this.viewSubClaims = viewSubClaims;
-        this.containers = containers;
+        this.containers = containers == null ? new HashMap<>() : new HashMap<>(containers);
         this.defaultContainerValue = defaultContainerValue;
         this.pvp = pvp;
         this.warps = warps;
@@ -72,7 +72,7 @@ public abstract class PermissionSet implements Cloneable{
         this.viewSubClaims = viewSubClaims;
     }
 
-    public void setContainer(Material material, int value){
+    public synchronized void setContainer(Material material, int value){
         this.containers.put(material, value);
     }
 
@@ -92,13 +92,15 @@ public abstract class PermissionSet implements Cloneable{
         this.warps = warps;
     }
 
-    public HashMap<Material, Integer> getContainers() {
-        return containers;
+    public synchronized HashMap<Material, Integer> getContainers() {
+        return new HashMap<>(containers);
     }
 
     public PermissionSet clone() {
         try {
-            return (PermissionSet) super.clone();
+            PermissionSet clone = (PermissionSet) super.clone();
+            clone.containers = new HashMap<>(containers);
+            return clone;
         } catch (CloneNotSupportedException e){
             e.printStackTrace();
         }

@@ -32,16 +32,29 @@ public class MigrationManager {
         plugin.getLogger().info("Starting data migration with [" + adapter.getIdentifier() + "]");
         CompletableFuture<String> migrateFuture = new CompletableFuture<>();
         CompletableFuture<String> completableFuture = adapter.migrate(this);
-        completableFuture.thenAccept((error) -> {
+        completableFuture.whenComplete((error, throwable) -> {
+            if (throwable != null) {
+                plugin.getLogger().severe("Data migration failed: " + throwable.getMessage());
+                migrateFuture.complete("Migration failed: " + throwable.getMessage());
+                return;
+            }
+
             if (error != null){
                 plugin.getLogger().severe("Data migration failed with error: " + error);
-
                 migrateFuture.complete(error);
+                return;
             }
+
             plugin.getLogger().info("Data migration completed successfully");
 
             plugin.getLogger().info("Force data save starting...");
-            manager.forceSaveClaims().thenAccept((a) -> {
+            manager.forceSaveClaims().whenComplete((ignored, saveThrowable) -> {
+                if (saveThrowable != null) {
+                    plugin.getLogger().severe("Force data save failed: " + saveThrowable.getMessage());
+                    migrateFuture.complete("Force data save failed: " + saveThrowable.getMessage());
+                    return;
+                }
+
                 plugin.getLogger().info("Force data save finished.");
                 migrateFuture.complete(null);
             });

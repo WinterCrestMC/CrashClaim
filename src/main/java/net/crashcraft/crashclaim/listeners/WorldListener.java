@@ -1,7 +1,5 @@
 package net.crashcraft.crashclaim.listeners;
 
-import com.ghostchu.quickshop.api.QuickShopAPI;
-import com.ghostchu.quickshop.api.shop.Shop;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -123,7 +121,7 @@ public class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onProjectileHitEvent(EntityInteractEvent e) {
-        if (QuickShopListener.isExempt(e)) {
+        if (QuickShopHook.isExempt(e)) {
             return;
         }
 
@@ -131,9 +129,7 @@ public class WorldListener implements Listener {
             Location location = e.getBlock().getLocation();
 
             // Bypass quickshop signs
-            Shop shop = QuickShopAPI.getInstance().getShopManager().getShopIncludeAttached(location);
-
-            if (shop != null) {
+            if (QuickShopHook.isShopAt(location)) {
                 return;
             }
 
@@ -229,7 +225,7 @@ public class WorldListener implements Listener {
             return;
         }
 
-        if (QuickShopListener.isExempt(e)) {
+        if (QuickShopHook.isExempt(e)) {
             return;
         }
 
@@ -238,11 +234,10 @@ public class WorldListener implements Listener {
         Location location = block.getLocation();
 
         // Bypass quickshop signs
-        Shop shop = QuickShopAPI.getInstance().getShopManager().getShopIncludeAttached(location);
-
-        if (shop != null) {
+        if (QuickShopHook.isShopAt(location)) {
             return;
         }
+
 
         if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.INTERACTIONS)) {
             Material material = block.getType();

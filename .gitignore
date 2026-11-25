@@ -27,3 +27,6 @@ gradle-app.setting
 
 # Other
 testServer/
+run/
+*.zip
+*.sqlite

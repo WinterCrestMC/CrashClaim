@@ -1,7 +1,6 @@
 package net.crashcraft.crashclaim.claimobjects;
 
 import java.util.List;
-import java.util.Set;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.data.MathUtils;
 import net.crashcraft.crashclaim.permissions.PermissionRoute;
@@ -17,6 +16,7 @@ import java.util.function.Predicate;
 
 public class Claim extends BaseClaim {
     private boolean toSave;
+    private long saveVersion;
 
     private ArrayList<SubClaim> subClaims;
     private UUID owner;
@@ -26,6 +26,7 @@ public class Claim extends BaseClaim {
     public Claim(int id, int upperCornerX, int upperCornerZ, int lowerCornerX, int lowerCornerZ, UUID world, PermissionGroup perms, UUID owner, List<UUID> bannedPlayers) {
         super(id, upperCornerX, upperCornerZ, lowerCornerX, lowerCornerZ, world, perms, bannedPlayers);
         this.toSave = false;
+        this.saveVersion = 0;
         this.subClaims = new ArrayList<>();
         this.owner = owner;
         this.contribution = new HashMap<>();
@@ -86,6 +87,9 @@ public class Claim extends BaseClaim {
     }
 
     private int getActivePermission(UUID uuid, Location location, PermissionRoute route){   //should only be executed with a location inside the claim
+        if (isBanned(uuid))
+            return PermState.DISABLE;
+
         if (uuid.equals(owner))
             return PermState.ENABLED;
 
@@ -102,6 +106,9 @@ public class Claim extends BaseClaim {
     }
 
     private int getActivePermission(UUID uuid, Location location, Material material){   //should only be executed with a location inside the claim
+        if (isBanned(uuid))
+            return PermState.DISABLE;
+
         if (uuid.equals(owner))
             return PermState.ENABLED;
 
@@ -117,26 +124,30 @@ public class Claim extends BaseClaim {
         }
     }
 
-    public void addContribution(UUID player, int area){
-        int adder = contribution.get(player) != null ? contribution.get(player) : 0;
+    public synchronized void addContribution(UUID player, int area){
+        Integer existingContribution = contribution.get(player);
+        int adder = existingContribution == null ? 0 : existingContribution;
         contribution.put(player, adder + area);
+        setToSave(true);
     }
 
-    public void adjustContribution(UUID player, int area){
-        int adder = (contribution.get(player) != null ? contribution.get(player) : 0) - area;
+    public synchronized void adjustContribution(UUID player, int area){
+        Integer existingContribution = contribution.get(player);
+        int adder = (existingContribution == null ? 0 : existingContribution) - area;
         if (adder <= 0){
             contribution.remove(player);
         } else {
             contribution.put(player, adder);
         }
+        setToSave(true);
     }
 
-    public int getContriubtion(UUID player){
-        return contribution.get(player);
+    public synchronized int getContriubtion(UUID player){
+        return contribution.getOrDefault(player, 0);
     }
 
-    public HashMap<UUID, Integer> getContribution(){
-        return contribution;
+    public synchronized HashMap<UUID, Integer> getContribution(){
+        return new HashMap<>(contribution);
     }
 
     @Override
@@ -147,26 +158,49 @@ public class Claim extends BaseClaim {
     @Override
     public synchronized void setToSave(boolean toSave) {
         this.toSave = toSave;
+        if (toSave) {
+            saveVersion++;
+        }
     }
 
-    public void addSubClaim(SubClaim subClaim){
+    public synchronized long getSaveVersion() {
+        return saveVersion;
+    }
+
+    public synchronized void markSaved(long savedVersion) {
+        if (saveVersion == savedVersion) {
+            toSave = false;
+        }
+    }
+
+    public synchronized void addSubClaim(SubClaim subClaim){
         subClaims.add(subClaim);
+        setToSave(true);
     }
 
-    public void removeSubClaim(int id){
+    public synchronized void removeSubClaim(int id){
         Iterator<SubClaim> subClaimIterator = subClaims.iterator();
         while (subClaimIterator.hasNext()){
             SubClaim subClaim = subClaimIterator.next();
 
             if (subClaim.getId() == id){
                 subClaimIterator.remove();
+                setToSave(true);
                 return;
             }
         }
     }
 
-    public ArrayList<SubClaim> getSubClaims(){
-        return subClaims;
+    public synchronized ArrayList<SubClaim> getSubClaims(){
+        return new ArrayList<>(subClaims);
+    }
+
+    @Override
+    public void ban(UUID player) {
+        for (SubClaim subClaim : getSubClaims()) {
+            subClaim.getPerms().removePlayerPermissionSet(player);
+        }
+        super.ban(player);
     }
 
     public UUID getOwner() {
@@ -175,12 +209,12 @@ public class Claim extends BaseClaim {
 
     //JSON needs this
 
-    public void setSubClaims(ArrayList<SubClaim> subClaims) {
-        this.subClaims = subClaims;
+    public synchronized void setSubClaims(ArrayList<SubClaim> subClaims) {
+        this.subClaims = new ArrayList<>(subClaims);
     }
 
-    public void setContribution(HashMap<UUID, Integer> contribution) {
-        this.contribution = contribution;
+    public synchronized void setContribution(HashMap<UUID, Integer> contribution) {
+        this.contribution = new HashMap<>(contribution);
     }
 
     public void setOwner(UUID owner) {

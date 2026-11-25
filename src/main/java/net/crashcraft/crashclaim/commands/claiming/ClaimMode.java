@@ -8,6 +8,9 @@ import java.util.UUID;
 public interface ClaimMode {
     void click(Player player, Location click);
 
+    default void move(Player player) {
+    }
+
     void cleanup(UUID player, boolean visuals);
 }
 

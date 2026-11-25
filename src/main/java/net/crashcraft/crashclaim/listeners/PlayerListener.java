@@ -1,6 +1,6 @@
 package net.crashcraft.crashclaim.listeners;
 
-import io.papermc.lib.PaperLib;
+import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.BaseClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
 import net.crashcraft.crashclaim.claimobjects.SubClaim;
@@ -20,6 +20,7 @@ import org.bukkit.block.Container;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.*;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -31,7 +32,10 @@ import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import io.papermc.paper.event.entity.EntityBreakByEntityEvent;
+import io.papermc.paper.event.entity.EntityBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
@@ -48,9 +52,12 @@ import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class PlayerListener implements Listener {
     private static final String BYPASS_PERMISSION = "crashclaim.admin";
@@ -126,14 +133,30 @@ public class PlayerListener implements Listener {
             helper.getBypassManager().addBypass(e.getPlayer().getUniqueId()); // Enable on join
         }
         Player player = e.getPlayer();
-        int time = manager.getProvider().getLastLoginTime(player.getUniqueId());
-        manager.getProvider().updateLastLoginTime(player.getUniqueId(), (int) (System.currentTimeMillis() / 1000L));
-        if (time != 0) {
-            int days = (int) ((System.currentTimeMillis() / 1000L - time) / 86400L);
-            if (days >= GlobalConfig.numberOfDaysTillExpiration) {
-                manager.getOwnedClaims(player.getUniqueId()).forEach(this::processDeletedClaim);
-            }
-        }
+        UUID playerId = player.getUniqueId();
+        int currentLogin = (int) (System.currentTimeMillis() / 1000L);
+        manager.updateLastLogin(playerId, currentLogin)
+            .thenCompose(previousLogin -> {
+                if (previousLogin == 0) {
+                    return CompletableFuture.completedFuture(new ArrayList<Claim>());
+                }
+
+                int daysSinceLogin = (currentLogin - previousLogin) / 86400;
+                if (daysSinceLogin < GlobalConfig.numberOfDaysTillExpiration) {
+                    return CompletableFuture.completedFuture(new ArrayList<Claim>());
+                }
+
+                return manager.getOwnedParentClaimsAsync(playerId);
+            })
+            .thenAccept(expiredClaims -> Bukkit.getScheduler().runTask(
+                CrashClaim.getPlugin(),
+                () -> expiredClaims.forEach(this::processDeletedClaim)
+            ))
+            .exceptionally(throwable -> {
+                CrashClaim.getPlugin().getLogger().severe("Failed to process claim expiration for " + playerId);
+                throwable.printStackTrace();
+                return null;
+            });
     }
 
     @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -268,10 +291,10 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        Claim claim = manager.getClaim(to.getBlockX(), to.getBlockY(), to.getWorld().getUID());
+        Claim claim = manager.getClaim(to.getBlockX(), to.getBlockZ(), to.getWorld().getUID());
 
         if (claim != null){
-            SubClaim subClaim = claim.getSubClaim(to.getBlockX(), to.getBlockY());
+            SubClaim subClaim = claim.getSubClaim(to.getBlockX(), to.getBlockZ());
             BaseClaim base = checkBan(claim, subClaim, event.getPlayer().getUniqueId());
 
             if (base.isBanned(event.getPlayer().getUniqueId())){
@@ -455,7 +478,12 @@ public class PlayerListener implements Listener {
         if (e.getDamager() instanceof Projectile arrow){
             Location location = arrow.getLocation();
             if (arrow.getShooter() instanceof Player player){
-                if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.ENTITIES)){
+                if (isBuildEntity(e.getEntity())) {
+                    if (!helper.hasPermission(player.getUniqueId(), e.getEntity().getLocation(), PermissionRoute.BUILD)){
+                        e.setCancelled(true);
+                        visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
+                    }
+                } else if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.ENTITIES)){
                     e.setCancelled(true);
                     visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__ENTITIES.getMessage(player));
                 }
@@ -465,7 +493,7 @@ public class PlayerListener implements Listener {
                 }
             }
         } else if (e.getDamager() instanceof Player player) {
-            if (e.getEntity().getType().equals(EntityType.ITEM_FRAME)){ // Special case move item frames into build category, less confusing
+            if (isBuildEntity(e.getEntity())){ // Item frames and cushions are placed like blocks, so breaking them needs build
                 if (!helper.hasPermission(player.getUniqueId(), e.getEntity().getLocation(), PermissionRoute.BUILD)){
                     e.setCancelled(true);
                     visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
@@ -509,6 +537,71 @@ public class PlayerListener implements Listener {
                 event.setCancelled(true);
             }
         }
+    }
+
+    /*
+     * Placeable non-hanging entities (cushions, armor stands, end crystals...). Hanging entities use HangingPlaceEvent.
+     * Vehicles are left alone so visitors can still use boats and minecarts on public rails/waterways.
+     */
+    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityPlaceEvent(EntityPlaceEvent e){
+        Player player = e.getPlayer();
+
+        if (player == null || e.getEntity() instanceof Vehicle){
+            return;
+        }
+
+        if (!helper.hasPermission(player.getUniqueId(), e.getEntity().getLocation(), PermissionRoute.BUILD)) {
+            e.setCancelled(true);
+            visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
+        }
+    }
+
+    /*
+     * Paper fires this (instead of HangingBreakEvent) when a block-attached entity that is not a Hanging breaks,
+     * e.g. cushions. Same rules as hanging entities.
+     */
+    @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityBreakEvent(EntityBreakEvent event) {
+        Location location = event.getEntity().getLocation();
+
+        if (event.getCause() == EntityBreakEvent.RemoveCause.EXPLOSION) {
+            if (!helper.hasPermission(location, PermissionRoute.EXPLOSIONS)){
+                event.setCancelled(true);
+            }
+            return;
+        }
+
+        if (event.getCause() != EntityBreakEvent.RemoveCause.ENTITY || !(event instanceof EntityBreakByEntityEvent byEntity)) {
+            return;
+        }
+
+        Entity remover = byEntity.getRemover();
+        if (remover instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
+            remover = shooter;
+        }
+
+        if (remover instanceof Player player){
+            // Placing these needs build (onEntityPlaceEvent), so breaking them does too. Checking entities here let
+            // visitors break cushions in any claim that allows entity interaction.
+            if (!helper.hasPermission(player.getUniqueId(), location, PermissionRoute.BUILD)){
+                event.setCancelled(true);
+                visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
+            }
+            return;
+        }
+
+        if (!helper.hasPermission(location, PermissionRoute.ENTITY_GRIEF)){
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Entities a player places like a block. Breaking them is a build action, not entity interaction, so a claim
+     * that lets visitors use entities (sit on cushions, trade with villagers) does not let them break these.
+     */
+    private static boolean isBuildEntity(Entity entity) {
+        return entity instanceof ItemFrame || entity instanceof Cushion;
     }
 
     @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -621,7 +714,7 @@ public class PlayerListener implements Listener {
         Player player = e.getPlayer();
 
 
-        if (QuickShopListener.isExempt(e)){
+        if (QuickShopHook.isExempt(e)){
             return;
         }
 
@@ -639,6 +732,47 @@ public class PlayerListener implements Listener {
             e.setCancelled(true);
             visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDeniedBlockPlacementInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        ItemStack item = event.getItem();
+        if (item == null) {
+            return;
+        }
+
+        ItemType itemType = item.getType().asItemType();
+
+        if (itemType == null || !itemType.hasBlockType()) {
+            return;
+        }
+
+        if (event.useItemInHand() == Event.Result.DENY) {
+            return;
+        }
+
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null) {
+            return;
+        }
+
+        Block placementBlock = clickedBlock.getBlockData().isReplaceable()
+                ? clickedBlock
+                : clickedBlock.getRelative(event.getBlockFace());
+        Player player = event.getPlayer();
+
+        if (helper.hasPermission(player.getUniqueId(), placementBlock.getLocation(), PermissionRoute.BUILD)) {
+            return;
+        }
+
+        event.setUseItemInHand(Event.Result.DENY);
+        event.setCancelled(true);
+        visuals.sendAlert(player, Localization.ALERT__NO_PERMISSIONS__BUILD.getMessage(player));
+        player.updateInventory();
     }
 
     @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = true)

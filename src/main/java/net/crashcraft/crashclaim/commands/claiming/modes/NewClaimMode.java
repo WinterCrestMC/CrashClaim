@@ -34,6 +34,10 @@ public class NewClaimMode implements ClaimMode {
     private final Location firstLocation;
     private final VisualizationManager visualizationManager;
     private final ClaimDataManager manager;
+    private boolean active;
+    private boolean validationPending;
+    private boolean purchasePending;
+    private boolean confirmationOpen;
 
     public NewClaimMode(ClaimCommand commandManager, Player player, Location firstLocation){
         this.commandManager = commandManager;
@@ -41,6 +45,7 @@ public class NewClaimMode implements ClaimMode {
         this.firstLocation = firstLocation;
         this.visualizationManager = commandManager.getVisualizationManager();
         this.manager = commandManager.getDataManager();
+        this.active = true;
 
         player.sendMessage(Localization.NEW_CLAIM__CLICK_CORNER.getMessage(player));
 
@@ -50,7 +55,7 @@ public class NewClaimMode implements ClaimMode {
         visualizationManager.getProvider(player.getUniqueId()).spawnMarkerVisual(VisualColor.YELLOW, group, firstLocation).spawn();
     }
 
-    private boolean checkCanCreate(Location min, Location max){
+    private boolean checkCanCreate(Location min, Location max, int ownedBlocks){
         if ((max.getBlockX() - min.getBlockX()) < 4 || (max.getBlockZ() - min.getBlockZ()) < 4) {
             player.sendMessage(Localization.NEW_CLAIM__MIN_SIZE.getMessage(player));
             return false;
@@ -65,9 +70,7 @@ public class NewClaimMode implements ClaimMode {
             player.sendMessage(Localization.NEW_CLAIM__OTHER_ERROR.getMessage(player));
             return false;
         }
-        // Fetch a users claims
-        int blocks = CrashClaim.getPlugin().getDataManager().getOwnedClaims(player.getUniqueId()).stream().map(Claim::getAreaBlocks).reduce(0, Integer::sum);
-        blocks += (max.getBlockX() - min.getBlockX()) * (max.getBlockZ() - min.getBlockZ());
+        int blocks = ownedBlocks + (max.getBlockX() - min.getBlockX()) * (max.getBlockZ() - min.getBlockZ());
         // Check max blocks
         if (GlobalConfig.maxClaimBlocks > -1  && (blocks > GlobalConfig.maxClaimBlocks)){
             player.sendMessage(Localization.CLAIM__TOO_BIG.getMessage(player,
@@ -80,68 +83,117 @@ public class NewClaimMode implements ClaimMode {
 
     @Override
     public void click(Player player, Location secondLocation) {
-        Location min = StaticClaimLogic.calculateMinCorner(firstLocation, secondLocation);
-        Location max = StaticClaimLogic.calculateMaxCorner(firstLocation, secondLocation);
-
-        if (!checkCanCreate(min, max)){
-            cleanup(player.getUniqueId(), true);
+        if (!active || validationPending || purchasePending || confirmationOpen) {
             return;
         }
 
-        int area = ContributionManager.getArea(min.getBlockX(), min.getBlockZ(), max.getBlockX(), max.getBlockZ());
+        Location min = StaticClaimLogic.calculateMinCorner(firstLocation, secondLocation);
+        Location max = StaticClaimLogic.calculateMaxCorner(firstLocation, secondLocation);
 
+        validateAsync(min, max, () -> openPurchaseConfirmation(min, max));
+    }
+
+    private void openPurchaseConfirmation(Location min, Location max) {
+        int area = ContributionManager.getArea(min.getBlockX(), min.getBlockZ(), max.getBlockX(), max.getBlockZ());
         int price = (GlobalConfig.bypassModeBypassesMoney && PermissionHelper.getPermissionHelper().getBypassManager().isBypass(player.getUniqueId())) ?
                 0 : (int) Math.ceil(area * GlobalConfig.getCostOfBlock(player));
         String priceString = Integer.toString(price);
 
-        if (price > 0){
-            new ConfirmationMenu(player,
-                    Localization.NEW_CLAIM__CREATE_MENU__TITLE.getMessage(player),
-                    Localization.NEW_CLAIM__CREATE_MENU__MESSAGE.getItem(player,
-                            "price", priceString),
-                    Localization.NEW_CLAIM__CREATE_MENU__ACCEPT.getItem(player,
-                            "price", priceString),
-                    Localization.NEW_CLAIM__CREATE_MENU__DENY.getItem(player,
-                            "price", priceString),
-                    (p, aBoolean) -> {
-                        if (aBoolean){
-                            if (!checkCanCreate(min, max)){
-                                cleanup(player.getUniqueId(), true);
-                                return "";
-                            }
+        if (price <= 0) {
+            purchasePending = true;
+            afterTransaction(min, max, 0, player.getUniqueId());
+            return;
+        }
 
-                            CrashClaim.getPlugin().getPayment().makeTransaction(player.getUniqueId(), TransactionType.WITHDRAW, "Claim Purchase", price, (res) -> {
-                                if (!res.transactionSuccess()){
-                                    player.sendMessage(Localization.NEW_CLAIM__NOT_ENOUGH_BALANCE.getMessage(player,
-                                            "price", priceString));
-                                    cleanup(player.getUniqueId(), true);
-                                    return;
-                                }
-
-                                Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> afterTransaction(min, max, area, player.getUniqueId()));
-                            });
-                        }
-                        return "";
-                    },
-                    p -> {
+        confirmationOpen = true;
+        new ConfirmationMenu(player,
+                Localization.NEW_CLAIM__CREATE_MENU__TITLE.getMessage(player),
+                Localization.NEW_CLAIM__CREATE_MENU__MESSAGE.getItem(player, "price", priceString),
+                Localization.NEW_CLAIM__CREATE_MENU__ACCEPT.getItem(player, "price", priceString),
+                Localization.NEW_CLAIM__CREATE_MENU__DENY.getItem(player, "price", priceString),
+                (confirmationPlayer, accepted) -> {
+                    confirmationOpen = false;
+                    if (!accepted) {
                         cleanup(player.getUniqueId(), true);
                         return "";
-                    }).open();
-        } else {
-            afterTransaction(min, max, 0, player.getUniqueId()); // set area to 0 to not add any money into economy
+                    }
+
+                    validateAsync(min, max, () -> {
+                        purchasePending = true;
+                        CrashClaim.getPlugin().getPayment().makeTransaction(
+                                player.getUniqueId(),
+                                TransactionType.WITHDRAW,
+                                "Claim Purchase",
+                                price,
+                                response -> Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                                    if (!active) {
+                                        return;
+                                    }
+
+                                    if (!response.transactionSuccess()) {
+                                        player.sendMessage(Localization.NEW_CLAIM__NOT_ENOUGH_BALANCE.getMessage(player,
+                                                "price", priceString));
+                                        cleanup(player.getUniqueId(), true);
+                                        return;
+                                    }
+
+                                    afterTransaction(min, max, price, player.getUniqueId());
+                                }));
+                    });
+                    return "";
+                },
+                confirmationPlayer -> {
+                    Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                        if (!active || !confirmationOpen) {
+                            return;
+                        }
+
+                        confirmationOpen = false;
+                        cleanup(player.getUniqueId(), true);
+                    });
+                    return "";
+                }).open();
+    }
+
+    private void validateAsync(Location min, Location max, Runnable continuation) {
+        if (validationPending || purchasePending) {
+            return;
         }
+
+        validationPending = true;
+        manager.getOwnedClaimsAsync(player.getUniqueId()).whenComplete((ownedClaims, throwable) ->
+                Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                    validationPending = false;
+                    if (!active) {
+                        return;
+                    }
+
+                    if (throwable != null) {
+                        CrashClaim.getPlugin().getLogger().severe("Unable to validate claim purchase for "
+                                + player.getUniqueId() + ": " + throwable.getMessage());
+                        player.sendMessage(Localization.NEW_CLAIM__ERROR.getMessage(player));
+                        cleanup(player.getUniqueId(), true);
+                        return;
+                    }
+
+                    int ownedBlocks = ownedClaims.stream().map(Claim::getAreaBlocks).reduce(0, Integer::sum);
+                    if (!checkCanCreate(min, max, ownedBlocks)) {
+                        cleanup(player.getUniqueId(), true);
+                        return;
+                    }
+
+                    continuation.run();
+                }));
     }
 
     private BaseComponent[] asBungee(Component component){
         return BungeeComponentSerializer.get().serialize(component);
     }
 
-    private void afterTransaction(Location min, Location max, int area, UUID target){
+    private void afterTransaction(Location min, Location max, int price, UUID target){
         ClaimResponse response = manager.createClaim(max, min, player.getUniqueId());
 
         if (response.isStatus()) {
-            ((Claim) response.getClaim()).addContribution(player.getUniqueId(), area); //Contribution tracking
-
             player.sendMessage(Localization.NEW_CLAIM__SUCCESS.getMessage(player));
 
             VisualGroup group = visualizationManager.fetchVisualGroup(player, true);
@@ -154,13 +206,29 @@ public class NewClaimMode implements ClaimMode {
 
             cleanup(player.getUniqueId(), false);
         } else {
+            refundFailedCreation(price);
             player.sendMessage(Localization.NEW_CLAIM__ERROR.getMessage(player));
             cleanup(player.getUniqueId(), true);
         }
     }
 
+    private void refundFailedCreation(int price) {
+        if (price <= 0) {
+            return;
+        }
+
+        CrashClaim.getPlugin().getPayment().makeTransaction(player.getUniqueId(), TransactionType.DEPOSIT,
+                "Failed Claim Purchase Refund", price, response -> {
+                    if (!response.transactionSuccess()) {
+                        CrashClaim.getPlugin().getLogger().severe("Unable to refund failed claim purchase for "
+                                + player.getUniqueId() + " (" + price + ")");
+                    }
+                });
+    }
+
     @Override
     public void cleanup(UUID player, boolean visuals) {
+        active = false;
         commandManager.forceCleanup(player, visuals);
     }
 }

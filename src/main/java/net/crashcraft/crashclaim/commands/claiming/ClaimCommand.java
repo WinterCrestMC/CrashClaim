@@ -3,7 +3,6 @@ package net.crashcraft.crashclaim.commands.claiming;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.taskchain.TaskChain;
 import net.crashcraft.crashclaim.CrashClaim;
 import net.crashcraft.crashclaim.claimobjects.BaseClaim;
 import net.crashcraft.crashclaim.claimobjects.Claim;
@@ -27,6 +26,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -162,17 +162,22 @@ public class ClaimCommand extends BaseCommand implements Listener {
                 case CLAIM -> {
                     Claim claim = dataManager.getClaim(location);
                     if (claim == null) {
-                        TaskChain<?> chain = CrashClaim.newChain();
-                        chain.asyncFirst(() -> {
-                            final int alreadyClaimed = dataManager.getNumberOwnedParentClaims(uuid);
-                            final GroupSettings groupSettings = CrashClaim.getPlugin().getPluginSupport().getPlayerGroupSettings(player);
-
-                            if (groupSettings.getMaxClaims() == -1) {
-                                return true;
+                        dataManager.getNumberOwnedParentClaimsAsync(uuid).whenComplete((alreadyClaimed, throwable) ->
+                                Bukkit.getScheduler().runTask(CrashClaim.getPlugin(), () -> {
+                            if (throwable != null) {
+                                CrashClaim.getPlugin().getLogger().severe("Unable to check claim limit for " + uuid
+                                        + ": " + throwable.getMessage());
+                                forceCleanup(uuid, true);
+                                return;
                             }
 
-                            return alreadyClaimed < groupSettings.getMaxClaims();
-                        }).syncLast((canClaim) -> {
+                            if (!player.isOnline() || modeMap.get(uuid) != ClickState.CLAIM || stateMap.containsKey(uuid)) {
+                                return;
+                            }
+
+                            GroupSettings groupSettings = CrashClaim.getPlugin().getPluginSupport().getPlayerGroupSettings(player);
+                            boolean canClaim = groupSettings.getMaxClaims() == -1
+                                    || alreadyClaimed < groupSettings.getMaxClaims();
                             if (!canClaim) {
                                 player.sendMessage(Localization.MAX_CLAIMS_REACHED.getMessage(player));
                                 forceCleanup(uuid, true);
@@ -180,14 +185,19 @@ public class ClaimCommand extends BaseCommand implements Listener {
                             }
 
                             stateMap.put(uuid, new NewClaimMode(this, player, location));
-                        });
-                        chain.execute();
+                        }));
                     } else {
                         if (claim.getAreaBlocks() > GlobalConfig.maxClaimBlocks && GlobalConfig.maxClaimBlocks != -1) {
                             player.sendMessage(Localization.CLAIM__TOO_BIG.getMessage(player, "blocks", Integer.toString(GlobalConfig.maxClaimBlocks)));
                             forceCleanup(uuid, true);
                             return;
                         }
+                        if (!PermissionHelper.getPermissionHelper().hasPermission(claim, uuid, PermissionRoute.MODIFY_CLAIM)) {
+                            player.sendMessage(Localization.RESIZE__NO_PERMISSION.getMessage(player));
+                            forceCleanup(uuid, true);
+                            return;
+                        }
+                        claimMap.put(uuid, claim);
                         stateMap.put(uuid, new ResizeClaimMode(this, player, claim, location));
                     }
                 }
@@ -214,13 +224,21 @@ public class ClaimCommand extends BaseCommand implements Listener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onMove(PlayerMoveEvent event) {
+        ClaimMode mode = stateMap.get(event.getPlayer().getUniqueId());
+        if (mode != null) {
+            mode.move(event.getPlayer());
+        }
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent e){
         forceCleanup(e.getPlayer().getUniqueId(), true);
     }
 
     public void forceCleanup(UUID uuid, boolean visuals){
-        Claim claim = claimMap.get(uuid);
+        Claim claim = claimMap.remove(uuid);
         if (claim != null){
             claim.setEditing(false);
         }
@@ -246,9 +264,18 @@ public class ClaimCommand extends BaseCommand implements Listener {
                 player.sendMessage(Localization.SUBCLAIM__ALREADY_RESIZING.getMessage(player));
                 return;
             }
+            if (!PermissionHelper.getPermissionHelper().hasPermission(claim, uuid, PermissionRoute.MODIFY_CLAIM)) {
+                player.sendMessage((claim instanceof SubClaim
+                        ? Localization.SUBCLAIM__NO_PERMISSION
+                        : Localization.RESIZE__NO_PERMISSION).getMessage(player));
+                return;
+            }
             if (claim instanceof SubClaim) {
-                stateMap.put(uuid, new ResizeSubClaimMode(this, player, ((SubClaim) claim).getParent(), (SubClaim) claim, null));
+                Claim parent = ((SubClaim) claim).getParent();
+                claimMap.put(uuid, parent);
+                stateMap.put(uuid, new ResizeSubClaimMode(this, player, parent, (SubClaim) claim, null));
             } else {
+                claimMap.put(uuid, (Claim) claim);
                 stateMap.put(uuid, new ResizeClaimMode(this, player, (Claim) claim, null));
             }
         }
@@ -256,6 +283,10 @@ public class ClaimCommand extends BaseCommand implements Listener {
 
     public boolean isResizing(Player player) {
         return stateMap.get(player.getUniqueId()) instanceof ResizeClaimMode;
+    }
+
+    public boolean isCurrentMode(Player player, ClaimMode mode) {
+        return stateMap.get(player.getUniqueId()) == mode;
     }
 
     public ClaimDataManager getDataManager() {
